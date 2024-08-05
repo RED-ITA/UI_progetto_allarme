@@ -28,6 +28,7 @@ def get_style(style):
     ico_new = os.path.join(directory, style)
     return ico_new
 
+"""
 def get_db():
     
 
@@ -37,3 +38,4 @@ def get_db():
     file_path = os.path.join(directory, file_name)
     
     return file_path
+"""
