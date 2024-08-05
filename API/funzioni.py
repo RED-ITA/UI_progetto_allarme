@@ -12,18 +12,32 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-def get_img(ico):
+def get_img(ico: str) -> str:
+
     """
     resituisce il percorso assoluto dell'icona
+
+    Args: 
+        ico (str): stringa con il nome dell'icona 
+
+    Returns: 
+        str: percorso assoluto
     """ 
+
+
     directory = get_resource_path(os.path.join("DATA", "ICO"))
     ico_new = os.path.join(directory, ico)
     return ico_new
 
-def get_style(style):
-    """
-    resituisce il percorso assoluto dello style
-    """ 
+def get_style(style: str) -> str:
+    """trovare il percorso assoluito del file .qss
+
+    Args:
+        style (str): nome del file qss
+
+    Returns:
+        str: percorso assoluto 
+    """    
     directory = get_resource_path("STYLE")
     ico_new = os.path.join(directory, style)
     return ico_new
