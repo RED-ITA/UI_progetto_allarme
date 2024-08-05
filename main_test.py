@@ -15,17 +15,35 @@ class MainWindows(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.resize(400, 600)
+        
+        self.setWindowTitle("ALLARME APP")
+        screen_geometry = QApplication.primaryScreen().geometry()
+        self.screen_width = screen_geometry.width()
+        self.screen_height = screen_geometry.height()
+
+        self.setGeometry(0, 0, self.screen_width, self.screen_height)
+        
+        self.create_layout()
         self.inizializzaUI()
-    
-    def inizializzaUI(self):
-
+        
+    def create_layout(self):
         self.main_layout = QStackedWidget()
-
+        
+        #PAGINA 0
         home_page = home.Home_Page(self)
         self.main_layout.addWidget(home_page)
-
+        
+        #PAGINA 1
+        
         self.setCentralWidget(self.main_layout)
+        
+        
+    def inizializzaUI(self):
+
+        
+        self.main_layout.setCurrentIndex(0) # parte dall widget 0 
+
+        
 
 
 
