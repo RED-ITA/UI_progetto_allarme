@@ -17,7 +17,6 @@ class Home_Page(QWidget):
 
         self.master = master
         self.master.setWindowTitle("HomePage")
-
         
         self.setAutoFillBackground(True)
         self.set_background_color()

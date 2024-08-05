@@ -2,7 +2,6 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
 
-
 import os
 import sys
 
@@ -34,6 +33,7 @@ class MainWindows(QMainWindow):
         self.main_layout.addWidget(home_page)
         
         #PAGINA 1
+        
         
         self.setCentralWidget(self.main_layout)
         
