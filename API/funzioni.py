@@ -13,11 +13,17 @@ def get_resource_path(relative_path):
 
 
 def get_img(ico):
-    directory = get_resource_path("ICO")
+    """
+    resituisce il percorso assoluto dell'icona
+    """ 
+    directory = get_resource_path(os.path.join("DATA", "ICO"))
     ico_new = os.path.join(directory, ico)
     return ico_new
 
 def get_style(style):
+    """
+    resituisce il percorso assoluto dello style
+    """ 
     directory = get_resource_path("STYLE")
     ico_new = os.path.join(directory, style)
     return ico_new
