@@ -2,6 +2,7 @@
 
 ## Features da implementare
 - [x] Creare Repository
+- [ ] Branch Developer
 
 ## Bug da risolvere
 
