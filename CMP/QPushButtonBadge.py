@@ -11,12 +11,13 @@ class QPushButtonBadge(QPushButton):
 
     funzionamento:
 
-        self.button = BadgeButton("calendar.png", None, self, "000000")     #crea senza badge
-        self.button.setFixedSize(400, 400)                                  #csetta le dimensioni 
+        self.button = QPushButtonBadge("calendar.png", None, self, "000000")        #crea senza badge e senza testo cons fondo nero
+        self.button.setFixedSize(400, 400)                                          #setta le dimensioni 
         
        
-        self.button.setBadgeText("1")                              #agginge il bedge con 1
-        self.button.removeBadge()                                   #rimuove il bedge
+        self.button.setBadgeText("1")                                   #agginge il bedge con 1
+        self.button.removeBadge()                                       #rimuove il bedge
+        self.button.getBedgeValue()                                     #restituisce il valore attuale del badge 
 
     """
     def __init__(self, image_path=None, badge_text=None, parent=None, color="f1f1f1"):
