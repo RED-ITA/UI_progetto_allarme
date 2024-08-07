@@ -1,5 +1,5 @@
 from PyQt6 import QtGui
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
 
 import os
@@ -20,6 +20,7 @@ class MainWindows(QMainWindow):
         self.screen_width = screen_geometry.width()
         self.screen_height = screen_geometry.height()
 
+
         self.setGeometry(0, 0, self.screen_width, self.screen_height)
         
         self.create_layout()
@@ -36,7 +37,8 @@ class MainWindows(QMainWindow):
         
         
         self.setCentralWidget(self.main_layout)
-        
+    
+
         
     def inizializzaUI(self):
 
