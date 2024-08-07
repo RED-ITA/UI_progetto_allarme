@@ -23,10 +23,11 @@ class QPushButtonBadge(QPushButton):
     def __init__(self, image_path=None, badge_text=None, parent=None, color="f1f1f1"):
         super().__init__("", parent)
         self.badge_text = badge_text
-        self.image_path = f.get_img(image_path)
+        
         self.icon = None
         if image_path:
-            self.setButtonImage(image_path)
+            self.image_path = f.get_img(image_path)
+            self.setButtonImage(self.image_path)
         self.initStylesheet(color)
 
     def initStylesheet(self, color):
