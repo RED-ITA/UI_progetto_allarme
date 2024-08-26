@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMainWindow, QApplication, QLabel
-from PyQt6.QtCore import QFile, QTextStream, QSize
+from PyQt6.QtCore import QFile, QTextStream, QSize, Qt, QTimer, QTime
 from PyQt6.QtGui import QColor, QPalette
 
 import sys
@@ -20,6 +20,9 @@ class Home_Page(QWidget):
 
         self.setAutoFillBackground(True)
         self.set_background_color()
+
+        # Setup timer to update the time every second
+        self.setup_timer()
 
     def initUI(self):
         # Initialize the UI elements
@@ -43,22 +46,28 @@ class Home_Page(QWidget):
         # Ora
         v = QVBoxLayout()
         data = QLabel("Giorno N Mese")
-        ora = QLabel("HH : MM")
+        data.setObjectName("data")
+        data.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Time label that will be updated
+        self.ora = QLabel("HH : MM")
+        self.ora.setObjectName("ora")
+        self.ora.setAlignment(Qt.AlignmentFlag.AlignCenter)
         v.addWidget(data)
-        v.addWidget(ora)
+        v.addWidget(self.ora)
 
         self.layout_pagina = QHBoxLayout()
         self.home_button = q.QPushButtonBadge("home.png")
         self.home_button.setFixedSize(size_ico, size_ico)
-        label = QLabel("Home")
 
         self.layout_pagina.setSpacing(0)
-        self.layout_pagina.addWidget(label)
         self.layout_pagina.addWidget(self.home_button)
-
+        
         self.prima_riga.addSpacing(self.get_icon_size())
         self.prima_riga.addWidget(self.sos)
+        self.prima_riga.addStretch()
         self.prima_riga.addLayout(v)
+        self.prima_riga.addStretch()
         self.prima_riga.addLayout(self.layout_pagina)
         self.prima_riga.addSpacing(self.get_icon_size())
 
@@ -111,6 +120,17 @@ class Home_Page(QWidget):
         self.layout1.addLayout(self.prima_riga)
         self.layout1.addLayout(self.h1)
         self.layout1.addLayout(self.h2)
+
+    def setup_timer(self):
+        # Create a QTimer to update the time every second
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_time)
+        self.timer.start(1000)  # Update every 1000 milliseconds (1 second)
+
+    def update_time(self):
+        # Get the current time and set it to the QLabel
+        current_time = QTime.currentTime().toString("HH:mm")
+        self.ora.setText(current_time)
 
     def get_icon_size(self):
         # Calculate icon size based on application window width
