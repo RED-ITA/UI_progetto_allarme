@@ -69,6 +69,11 @@ class Header(QWidget):
             self.home()
         elif tipo == 1:
             self.impostazioni()
+        elif tipo == 2:
+            self.sensori()
+        elif tipo == 3:
+            self.stanze()
+
         
 
     def set_background_color(self):
@@ -144,6 +149,76 @@ class Header(QWidget):
 
         self.layout_pagina = QHBoxLayout()
         self.home_button = q.QPushButtonBadge("settings.png")
+        self.home_button.setFixedSize(size_ico, size_ico)
+        self.layout_pagina.setSpacing(0)
+        self.layout_pagina.addWidget(self.home_button)
+
+        self.prima_riga.addSpacing(self.get_icon_size())
+        self.prima_riga.addWidget(self.sos)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(v)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(self.layout_pagina)
+        self.prima_riga.addSpacing(self.get_icon_size())
+        self.update_time()
+
+    def sensori(self):
+        size_ico = int(self.get_icon_size() / 1.8)
+
+        # Navigation bar
+        self.sos = q.QPushButtonBadge("go_back.png")
+        self.sos.clicked.connect(self.back)
+        self.sos.setFixedSize(size_ico, size_ico)
+        # Ora
+        v = QVBoxLayout()
+        self.data = QLabel("Giorno N Mese")
+        self.data.setObjectName("data")
+        self.data.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Time label that will be updated
+        self.ora = QLabel("HH : MM")
+        self.ora.setObjectName("ora")
+        self.ora.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(self.data)
+        v.addWidget(self.ora)
+
+        self.layout_pagina = QHBoxLayout()
+        self.home_button = q.QPushButtonBadge("eye.png")
+        self.home_button.setFixedSize(size_ico, size_ico)
+        self.layout_pagina.setSpacing(0)
+        self.layout_pagina.addWidget(self.home_button)
+
+        self.prima_riga.addSpacing(self.get_icon_size())
+        self.prima_riga.addWidget(self.sos)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(v)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(self.layout_pagina)
+        self.prima_riga.addSpacing(self.get_icon_size())
+        self.update_time()
+
+    def stanze(self):
+        size_ico = int(self.get_icon_size() / 1.8)
+
+        # Navigation bar
+        self.sos = q.QPushButtonBadge("go_back.png")
+        self.sos.clicked.connect(self.back)
+        self.sos.setFixedSize(size_ico, size_ico)
+        # Ora
+        v = QVBoxLayout()
+        self.data = QLabel("Giorno N Mese")
+        self.data.setObjectName("data")
+        self.data.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Time label that will be updated
+        self.ora = QLabel("HH : MM")
+        self.ora.setObjectName("ora")
+        self.ora.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(self.data)
+        v.addWidget(self.ora)
+
+        self.layout_pagina = QHBoxLayout()
+        self.home_button = q.QPushButtonBadge("home.png")
         self.home_button.setFixedSize(size_ico, size_ico)
         self.layout_pagina.setSpacing(0)
         self.layout_pagina.addWidget(self.home_button)

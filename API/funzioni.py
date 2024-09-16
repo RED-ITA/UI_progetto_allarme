@@ -13,7 +13,7 @@ def get_resource_path(relative_path):
 
 
 def get_img(ico):
-    directory = get_resource_path("ICO")
+    directory = get_resource_path(os.path.join("data", "ICO"))
     ico_new = os.path.join(directory, ico)
     return ico_new
 

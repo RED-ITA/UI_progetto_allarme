@@ -135,9 +135,13 @@ class Home_Page(QWidget):
         
     def sensori(self):
         print("sensori")
+        self.header.set_tipo(2)
+        self.master.change_page(2)
 
     def stanze(self):
         print("stanze")
+        self.header.set_tipo(3)
+        self.master.change_page(3)
         
     def attiva(self):
         print("attiva")
