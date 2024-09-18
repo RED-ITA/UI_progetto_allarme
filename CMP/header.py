@@ -50,9 +50,11 @@ class Header(QWidget):
         current_time = QTime.currentTime().toString("HH:mm")
         current_date = QDate.currentDate().toString("dddd d MMMM")
     
-        
-        self.ora.setText(current_time)
-        self.data.setText(current_date)
+        try:
+            self.ora.setText(current_time)
+            self.data.setText(current_date)
+        except Exception:
+            pass
         
 
     def set_tipo(self, tipo):
@@ -136,16 +138,16 @@ class Header(QWidget):
         self.sos.setFixedSize(size_ico, size_ico)
         # Ora
         v = QVBoxLayout()
-        self.data = QLabel("Giorno N Mese")
-        self.data.setObjectName("data")
-        self.data.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        pag = QLabel("pagina")
+        pag.setObjectName("data")
+        pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Time label that will be updated
-        self.ora = QLabel("HH : MM")
-        self.ora.setObjectName("ora")
-        self.ora.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        v.addWidget(self.data)
-        v.addWidget(self.ora)
+        nome = QLabel("IMPOSTAZIONI")
+        nome.setObjectName("ora")
+        nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(pag)
+        v.addWidget(nome)
 
         self.layout_pagina = QHBoxLayout()
         self.home_button = q.QPushButtonBadge("settings.png")
@@ -160,7 +162,7 @@ class Header(QWidget):
         self.prima_riga.addStretch()
         self.prima_riga.addLayout(self.layout_pagina)
         self.prima_riga.addSpacing(self.get_icon_size())
-        self.update_time()
+        #self.update_time()
 
     def sensori(self):
         size_ico = int(self.get_icon_size() / 1.8)
@@ -171,16 +173,16 @@ class Header(QWidget):
         self.sos.setFixedSize(size_ico, size_ico)
         # Ora
         v = QVBoxLayout()
-        self.data = QLabel("Giorno N Mese")
-        self.data.setObjectName("data")
-        self.data.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        pag = QLabel("pagina")
+        pag.setObjectName("data")
+        pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Time label that will be updated
-        self.ora = QLabel("HH : MM")
-        self.ora.setObjectName("ora")
-        self.ora.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        v.addWidget(self.data)
-        v.addWidget(self.ora)
+        nome = QLabel("SENSORI")
+        nome.setObjectName("ora")
+        nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(pag)
+        v.addWidget(nome)
 
         self.layout_pagina = QHBoxLayout()
         self.home_button = q.QPushButtonBadge("eye.png")
@@ -204,21 +206,22 @@ class Header(QWidget):
         self.sos = q.QPushButtonBadge("go_back.png")
         self.sos.clicked.connect(self.back)
         self.sos.setFixedSize(size_ico, size_ico)
+        
         # Ora
         v = QVBoxLayout()
-        self.data = QLabel("Giorno N Mese")
-        self.data.setObjectName("data")
-        self.data.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        pag = QLabel("pagina")
+        pag.setObjectName("data")
+        pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Time label that will be updated
-        self.ora = QLabel("HH : MM")
-        self.ora.setObjectName("ora")
-        self.ora.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        v.addWidget(self.data)
-        v.addWidget(self.ora)
+        nome = QLabel("STANZE")
+        nome.setObjectName("ora")
+        nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(pag)
+        v.addWidget(nome)
 
         self.layout_pagina = QHBoxLayout()
-        self.home_button = q.QPushButtonBadge("home.png")
+        self.home_button = q.QPushButtonBadge("rooms.png")
         self.home_button.setFixedSize(size_ico, size_ico)
         self.layout_pagina.setSpacing(0)
         self.layout_pagina.addWidget(self.home_button)
@@ -227,10 +230,11 @@ class Header(QWidget):
         self.prima_riga.addWidget(self.sos)
         self.prima_riga.addStretch()
         self.prima_riga.addLayout(v)
+
         self.prima_riga.addStretch()
         self.prima_riga.addLayout(self.layout_pagina)
         self.prima_riga.addSpacing(self.get_icon_size())
-        self.update_time()
+        #self.update_time()
 
     def sos_f(self):
         print("SOS")

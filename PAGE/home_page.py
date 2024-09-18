@@ -65,7 +65,7 @@ class Home_Page(QWidget):
         self.h2.addSpacing(int(self.master.width() * 0.2))
 
         # Second row
-        self.rooms_button = q.QPushButtonBadge("home.png")
+        self.rooms_button = q.QPushButtonBadge("rooms.png")
         self.rooms_button.setFixedSize(size_ico, size_ico)
         self.rooms_button.clicked.connect(self.stanze)
         self.h2.addWidget(self.rooms_button)
@@ -127,6 +127,9 @@ class Home_Page(QWidget):
 
     def warning(self):
         print("anomalie")
+
+    #def features(self):
+    #    print("magic")
         
     def impostazioni(self):
         print("impostazioni")
