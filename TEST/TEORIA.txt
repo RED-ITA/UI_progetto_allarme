@@ -245,6 +245,7 @@ if __name__ == '__main__':
     # Attende che i processi terminino (opzionale)
     modbus_proc.join()
     ui_proc.join()
+    
 3. Uso di un Database e Locking Esplicito
 Se preferisci che i processi non debbano comunicare direttamente ma solo attraverso il database, puoi anche implementare una gestione dei lock a livello di database. Puoi utilizzare transazioni esplicite e blocchi (lock) per gestire in modo sicuro le operazioni di lettura e scrittura senza sovrapposizioni.
 
