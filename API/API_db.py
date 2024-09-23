@@ -1,75 +1,141 @@
 import sqlite3
 import time
-from API import funzioni as f, LOG as l 
 
-def crea_db():
-    l.log_file(111, " creazione")
-    # Connessione al database (crea il database se non esiste)
-    conn = sqlite3.connect(f.get_db())
-    
-    # Creazione di un cursore per eseguire i comandi SQL
-    cursor = conn.cursor()
-    
-    # Creazione della tabella PESATA
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS PESATA (
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        peso_totale FLOAT,
-        peso_b1 FLOAT,
-        peso_b2 FLOAT,
-        peso_b3 FLOAT,
-        peso_b4 FLOAT,
-        peso_b5 FLOAT,
-        peso_b6 FLOAT,
-        desc TEXT,
-        priority INTEGER,
-        data TEXT, 
-        name TEXT
-    )
-    ''')
-    
-    # Salvataggio delle modifiche e chiusura della connessione
-    conn.commit()
-    conn.close()
+# Number of retries and delay between retries
+MAX_RETRIES = 10
+RETRY_DELAY = 0.1  # in seconds
 
-
-
-def query_database(max_attempts=5, wait_time=1):
-    conn = None
-    attempts = 0
-
-    while attempts < max_attempts:
+# Function to create the database and tables with retry logic
+def create_db():
+    for attempt in range(MAX_RETRIES):
         try:
-            # Connessione al database
-            conn = sqlite3.connect('example.db')
-            cursor = conn.cursor()
+            conn = sqlite3.connect('sensors.db')
+            c = conn.cursor()
 
-            # Proviamo a leggere dal database
-            cursor.execute("SELECT * FROM my_table")
-            results = cursor.fetchall()
+            # Create the SENSORI table
+            c.execute('''CREATE TABLE IF NOT EXISTS SENSORI (
+                            Id INTEGER PRIMARY KEY, 
+                            Tipo INTEGER, 
+                            Data TEXT, 
+                            Stanza TEXT, 
+                            Soglia INTEGER, 
+                            Error INTEGER
+                        )''')
 
-            # Stampa i risultati e interrompi il ciclo
-            for row in results:
-                print(row)
-            break  # Uscita dal ciclo se la query ha successo
+            # Create the VALORI table
+            c.execute('''CREATE TABLE IF NOT EXISTS VALORI (
+                            Id INTEGER PRIMARY KEY, 
+                            Value INTEGER
+                        )''')
+            
+            # Create the SISTEMA table
+            c.execute('''CREATE TABLE IF NOT EXISTS SISTEMA (
+                            Allarme INTEGER, 
+                            Stato INTEGER, 
+                            Update INTEGER, 
+                            Error INTEGER
+                        )''')
 
+            # Create the LOG table
+            c.execute('''CREATE TABLE IF NOT EXISTS LOG (
+                            Id INTEGER, 
+                            Tipo INTEGER, 
+                            Stanza TEXT, 
+                            Data TEXT
+                        )''')
+
+            conn.commit()
+            conn.close()
+            return 1  # Success
         except sqlite3.OperationalError as e:
-            # Controlliamo se l'errore è dovuto a un blocco
             if 'database is locked' in str(e):
-                attempts += 1
-                print(f"Il database è bloccato. Riprovo tra {wait_time} secondi... (Tentativo {attempts}/{max_attempts})")
-                time.sleep(wait_time)  # Attende prima di ritentare
+                print(f"Database locked, retrying... ({attempt + 1}/{MAX_RETRIES})")
+                time.sleep(RETRY_DELAY)
             else:
-                # Altri errori operazionali
-                print(f"Errore durante l'accesso al database: {e}")
-                break  # Se è un altro errore, esce dal ciclo
+                print(f"Error creating database: {e}")
+                return 0  # Failure
+        except Exception as e:
+            print(f"Error creating database: {e}")
+            return 0  # Failure
+    return 0  # Failure after retries
 
-        finally:
-            if conn:
-                conn.close()  # Assicuriamoci di chiudere la connessione
+# Function to add a new sensor with retry logic
+def add_sensor(sensor_data):
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect('sensors.db')
+            c = conn.cursor()
 
-    if attempts == max_attempts:
-        print("Numero massimo di tentativi raggiunto. Operazione fallita.")
+            # Add new sensor
+            c.execute('''INSERT INTO SENSORI (Id, Tipo, Data, Stanza, Soglia, Error) 
+                         VALUES (?, ?, ?, ?, ?, ?)''', sensor_data)
 
-# Esegui la funzione
-query_database()
+            conn.commit()
+            conn.close()
+            return 1  # Success
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                print(f"Database locked, retrying... ({attempt + 1}/{MAX_RETRIES})")
+                time.sleep(RETRY_DELAY)
+            else:
+                print(f"Error adding sensor: {e}")
+                return 0  # Failure
+        except sqlite3.IntegrityError:
+            print("Error: Sensor with this ID already exists.")
+            return 0  # Failure
+        except Exception as e:
+            print(f"Error adding sensor: {e}")
+            return 0  # Failure
+    return 0  # Failure after retries
+
+# Function to edit sensor details with retry logic
+def edit_sensor(sensor_id, new_data):
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect('sensors.db')
+            c = conn.cursor()
+
+            # Update sensor details
+            c.execute('''UPDATE SENSORI 
+                         SET Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
+                         WHERE Id = ?''', (*new_data, sensor_id))
+
+            conn.commit()
+            conn.close()
+            return 1  # Success
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                print(f"Database locked, retrying... ({attempt + 1}/{MAX_RETRIES})")
+                time.sleep(RETRY_DELAY)
+            else:
+                print(f"Error updating sensor: {e}")
+                return 0  # Failure
+        except Exception as e:
+            print(f"Error updating sensor: {e}")
+            return 0  # Failure
+    return 0  # Failure after retries
+
+# Function to delete a sensor with retry logic
+def delete_sensor(sensor_id):
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect('sensors.db')
+            c = conn.cursor()
+
+            # Delete the sensor
+            c.execute('DELETE FROM SENSORI WHERE Id = ?', (sensor_id,))
+
+            conn.commit()
+            conn.close()
+            return 1  # Success
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                print(f"Database locked, retrying... ({attempt + 1}/{MAX_RETRIES})")
+                time.sleep(RETRY_DELAY)
+            else:
+                print(f"Error deleting sensor: {e}")
+                return 0  # Failure
+        except Exception as e:
+            print(f"Error deleting sensor: {e}")
+            return 0  # Failure
+    return 0  # Failure after retries
