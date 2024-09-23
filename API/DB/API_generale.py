@@ -18,12 +18,14 @@ def create_db():
 
             # Create the SENSORI table
             c.execute('''CREATE TABLE IF NOT EXISTS SENSORI (
-                            Id INTEGER PRIMARY KEY, 
+                            SensorPk INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Id INTEGER, 
                             Tipo INTEGER, 
                             Data TEXT, 
                             Stanza TEXT, 
                             Soglia INTEGER, 
-                            Error INTEGER
+                            Error INTEGER,
+                            Stato INTEGER  -- 1 = Active, 0 = Inactive
                         )''')
 
             # Create the VALORI table

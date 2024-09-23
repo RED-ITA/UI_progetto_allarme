@@ -19,7 +19,7 @@ def add_sensor(sensor_data):
             conn = sqlite3.connect('sensors.db')
             c = conn.cursor()
 
-            c.execute('''INSERT INTO SENSORI (Id, Tipo, Data, Stanza, Soglia, Error) 
+            c.execute('''INSERT INTO SENSORI (SensorPk, Tipo, Data, Stanza, Soglia, Error) 
                          VALUES (?, ?, ?, ?, ?, ?)''', sensor_data)
 
             conn.commit()
@@ -58,7 +58,7 @@ def edit_sensor(sensor_id, new_data):
 
             c.execute('''UPDATE SENSORI 
                          SET Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
-                         WHERE Id = ?''', (*new_data, sensor_id))
+                         WHERE SensorPk = ?''', (*new_data, sensor_id))
             
             c.execute('''UPDATE SISTEMA 
                          SET Update = ?
@@ -79,26 +79,30 @@ def edit_sensor(sensor_id, new_data):
             return 0  # Failure
     return 0  # Failure after retries
 
-def delete_sensor(sensor_id):
+def delete_sensor(sensor_pk):
     """
-    Deletes a sensor from the SENSORI table.
+    Marks a sensor as inactive (Stato = 0) in the SENSORI table instead of deleting it.
     
     Args:
-        sensor_id (int): The ID of the sensor to delete.
+        sensor_pk (int): The primary key of the sensor to mark as inactive.
     
-    Also updates the SISTEMA table's Update field to 1. Retries if the database is locked and
-    returns 1 on success and 0 on failure.
+    Also updates the SISTEMA table's Update field to 1. Retries if the database is locked 
+    and returns 1 on success and 0 on failure.
     """
     for attempt in range(MAX_RETRIES):
         try:
             conn = sqlite3.connect('sensors.db')
             c = conn.cursor()
 
-            c.execute('DELETE FROM SENSORI WHERE Id = ?', (sensor_id,))
+            # Mark sensor as inactive
+            c.execute('''UPDATE SENSORI 
+                         SET Stato = ? 
+                         WHERE SensorPk = ?''', (0, sensor_pk))
             
             c.execute('''UPDATE SISTEMA 
-                         SET Update = ?
+                         SET Update = ? 
                          WHERE Id = ?''', (1, 1))
+
             conn.commit()
             conn.close()
             return 1  # Success
@@ -275,7 +279,7 @@ def get_all_logs():
     
     The result includes:
     - LogId (auto-incremented log entry ID)
-    - SensorId (ID of the sensor)
+    - SensorId (ID of the sensor PK not id of modbus)
     - Data (timestamp of the log)
     - Tipo (type of sensor: movement, magnetic, vibration)
     - Stanza (room name where the sensor is located)
@@ -291,7 +295,7 @@ def get_all_logs():
         c.execute('''
             SELECT LOG.LogId, LOG.SensorId, LOG.Data, SENSORI.Tipo, SENSORI.Stanza
             FROM LOG
-            LEFT JOIN SENSORI ON LOG.SensorId = SENSORI.Id
+            LEFT JOIN SENSORI ON LOG.SensorId = SENSORI.SensorPk
         ''')
         
         logs = c.fetchall()
