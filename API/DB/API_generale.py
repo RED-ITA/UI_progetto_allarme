@@ -4,7 +4,6 @@ import time
 # Number of retries and delay between retries
 MAX_RETRIES = 10
 RETRY_DELAY = 0.1  # in seconds
-
 def create_db():
     """
     Creates the SQLite3 database and all necessary tables if they do not already exist.
@@ -45,10 +44,12 @@ def create_db():
             c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Update, Error) 
                          VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
 
-            # Create the LOG table
+            # Create the LOG table with an auto-incrementing primary key
             c.execute('''CREATE TABLE IF NOT EXISTS LOG (
-                            Id INTEGER,  
-                            Data TEXT
+                            LogId INTEGER PRIMARY KEY AUTOINCREMENT,  
+                            SensorId INTEGER,  
+                            Data TEXT,
+                            FOREIGN KEY (SensorId) REFERENCES SENSORI(Id)
                         )''')
             
             # Create the STANZE table

@@ -267,3 +267,36 @@ def get_all_sensori():
     except Exception as e:
         print(f"Error retrieving sensors: {e}")
         return []
+    
+    
+def get_all_logs():
+    """
+    Retrieves all log entries with a left join to the SENSORI table to include sensor details.
+    
+    The result includes:
+    - LogId (auto-incremented log entry ID)
+    - SensorId (ID of the sensor)
+    - Data (timestamp of the log)
+    - Tipo (type of sensor: movement, magnetic, vibration)
+    - Stanza (room name where the sensor is located)
+    
+    Returns:
+        list: A list of tuples with the combined log and sensor data.
+    """
+    try:
+        conn = sqlite3.connect('sensors.db')
+        c = conn.cursor()
+
+        # Perform a LEFT JOIN between LOG and SENSORI tables
+        c.execute('''
+            SELECT LOG.LogId, LOG.SensorId, LOG.Data, SENSORI.Tipo, SENSORI.Stanza
+            FROM LOG
+            LEFT JOIN SENSORI ON LOG.SensorId = SENSORI.Id
+        ''')
+        
+        logs = c.fetchall()
+        conn.close()
+        return logs
+    except Exception as e:
+        print(f"Error retrieving logs: {e}")
+        return []
