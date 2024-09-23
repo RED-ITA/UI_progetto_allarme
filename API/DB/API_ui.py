@@ -1,6 +1,6 @@
 import sqlite3
 import time
-
+from API import funzioni as f
 # Number of retries and delay between retries
 MAX_RETRIES = 10
 RETRY_DELAY = 0.1  # in seconds
@@ -16,10 +16,10 @@ def add_sensor(sensor_data):
     """
     for attempt in range(MAX_RETRIES):
         try:
-            conn = sqlite3.connect('sensors.db')
+            conn = sqlite3.connect(f.get_db())
             c = conn.cursor()
 
-            c.execute('''INSERT INTO SENSORI (SensorPk, Tipo, Data, Stanza, Soglia, Error) 
+            c.execute('''INSERT INTO SENSORI (Id, Tipo, Data, Stanza, Soglia, Error) 
                          VALUES (?, ?, ?, ?, ?, ?)''', sensor_data)
 
             conn.commit()
@@ -53,11 +53,11 @@ def edit_sensor(sensor_id, new_data):
     """
     for attempt in range(MAX_RETRIES):
         try:
-            conn = sqlite3.connect('sensors.db')
+            conn = sqlite3.connect(f.get_db())
             c = conn.cursor()
 
             c.execute('''UPDATE SENSORI 
-                         SET Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
+                         SET id = ?, Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
                          WHERE SensorPk = ?''', (*new_data, sensor_id))
             
             c.execute('''UPDATE SISTEMA 
@@ -91,7 +91,7 @@ def delete_sensor(sensor_pk):
     """
     for attempt in range(MAX_RETRIES):
         try:
-            conn = sqlite3.connect('sensors.db')
+            conn = sqlite3.connect(f.get_db())
             c = conn.cursor()
 
             # Mark sensor as inactive
@@ -130,7 +130,7 @@ def add_stanza(stanza_data):
     """
     for attempt in range(MAX_RETRIES):
         try:
-            conn = sqlite3.connect('sensors.db')
+            conn = sqlite3.connect(f.get_db())
             c = conn.cursor()
 
             c.execute('''INSERT INTO STANZE (Nome, img) 
@@ -168,7 +168,7 @@ def edit_stanza(nome, new_img):
     """
     for attempt in range(MAX_RETRIES):
         try:
-            conn = sqlite3.connect('sensors.db')
+            conn = sqlite3.connect(f.get_db())
             c = conn.cursor()
 
             c.execute('''UPDATE STANZE 
@@ -208,7 +208,7 @@ def delete_stanza(nome):
     """
     for attempt in range(MAX_RETRIES):
         try:
-            conn = sqlite3.connect('sensors.db')
+            conn = sqlite3.connect(f.get_db())
             c = conn.cursor()
 
             c.execute('DELETE FROM STANZE WHERE Nome = ?', (nome,))
@@ -240,7 +240,7 @@ def get_all_stanze():
         list: A list of tuples with all room data.
     """
     try:
-        conn = sqlite3.connect('sensors.db')
+        conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
 
         c.execute('SELECT * FROM STANZE')
@@ -260,7 +260,7 @@ def get_all_sensori():
         list: A list of tuples with all sensor data.
     """
     try:
-        conn = sqlite3.connect('sensors.db')
+        conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
 
         c.execute('SELECT * FROM SENSORI')
@@ -288,7 +288,7 @@ def get_all_logs():
         list: A list of tuples with the combined log and sensor data.
     """
     try:
-        conn = sqlite3.connect('sensors.db')
+        conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
 
         # Perform a LEFT JOIN between LOG and SENSORI tables

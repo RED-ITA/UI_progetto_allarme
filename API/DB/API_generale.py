@@ -1,6 +1,6 @@
 import sqlite3
 import time
-
+from API import funzioni as f
 # Number of retries and delay between retries
 MAX_RETRIES = 10
 RETRY_DELAY = 0.1  # in seconds
@@ -13,7 +13,7 @@ def create_db():
     """
     for attempt in range(MAX_RETRIES):
         try:
-            conn = sqlite3.connect('sensors.db')
+            conn = sqlite3.connect(f.get_db())
             c = conn.cursor()
 
             # Create the SENSORI table
