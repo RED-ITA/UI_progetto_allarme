@@ -9,11 +9,16 @@
 - [x] Definire l'architettura dell'applicazione (front-end, back-end, database)
 - [x] Creare una roadmap dettagliata del progetto
 
-## Fase 2: Sviluppo dell’Interfaccia Grafica (UI)
+## Fase 2: Sviluppo dell’Interfaccia Grafica (UI) 
+### Fase a: Svillupo dell'UI I parte
 - [x] Mockups UI
 - [x] Creare la Home Page con stato del sistema
 - [x] Creare la pagina Sensori 
 - [x] Creare la pagina Stanze 
+### Fase b: Strutturazione DB UI
+- [x] Creare la struttura del database
+- [x] Funzioni db per l'UI
+### Fase c: Svillupo dell'UI II parte
 - [ ] Implementare le funzoni per la pagina Sensori per aggiungere, modificare e rimuovere sensori
 - [ ] Implementare le funzoni per la pagina Rilevamenti per monitorare gli allarmi attivati
 - [ ] Implementare il threading per la reattività della UI
@@ -25,8 +30,6 @@
 - [ ] Gestire la comunicazione asincrona con i sensori Modbus
 
 ## Fase 4: Implementazione del Database e Sincronizzazione
-- [ ] Creare le tabelle `SENSORI`, `VALORI`, `SISTEMA`, `LOG` in SQLite3
-- [ ] Implementare le query di lettura e scrittura nel database
 - [ ] Gestire la concorrenza nelle operazioni sul database
 - [ ] Sincronizzare i dati del database con l'interfaccia grafica e il servizio in background
 
