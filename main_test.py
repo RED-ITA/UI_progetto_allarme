@@ -1,13 +1,14 @@
 from PyQt6.QtGui import  QColor
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget, QScrollArea
 
 import os
 import sys
 
 from API import funzioni as f, LOG as log
+from OBJ import OBJ_UI_Sensore as o
+from CMP import header as h, QWidgetSensore as w
 
-from CMP import header as h 
 from PAGE import (
      home_page as home, 
      impostazioni_page as impo , 
@@ -20,75 +21,55 @@ class MainWindows(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        log.setup_logger()
         
-        self.setWindowTitle("ALLARME APP")
-        screen_geometry = QApplication.primaryScreen().geometry()
-        self.screen_width = screen_geometry.width()
-        self.screen_height = screen_geometry.height()
+        layout = QVBoxLayout()
+        wid = QWidget()
+        lista = []
 
+        # Creazione degli oggetti Sensore
+        oggetto0 = o.Sensore(0, 1, 0, "23/13/12", "cucina", 0, 0, 1)
+        lista.append(oggetto0)
+        oggetto1 = o.Sensore(0, 2, 0, "23/13/12", "cucina", 0, 0, 0)
+        lista.append(oggetto1)
+        oggetto2 = o.Sensore(0, 3, 1, "23/13/12", "cucina", 0, 0, 1)
+        lista.append(oggetto2)
+        oggetto3 = o.Sensore(0, 4, 1, "23/13/12", "cucina", 0, 0, 0)
+        lista.append(oggetto3)
+        oggetto4 = o.Sensore(0, 5, 2, "23/13/12", "cucina", 0, 0, 1)
+        lista.append(oggetto4)
+        oggetto5 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
+        lista.append(oggetto5)
 
-        self.setGeometry(0, 0, self.screen_width, self.screen_height)
-        
-        self.create_layout()
-        self.inizializzaUI()
-        
-    def create_layout(self):
-        try:
-            wid = QWidget()
-            self.super_layout = QVBoxLayout()
-            self.super_layout.setContentsMargins(0,0,0,0)
+        # Creazione della QScrollArea
+        area = QScrollArea()
+        area.setFixedHeight(350)
+        area.setFixedWidth(600)
+        area.setWidgetResizable(True)  # Permette il ridimensionamento del widget
 
-            self.main_layout = QStackedWidget()
+        # Widget interno che conterrà il layout orizzontale
+        scroll_content = QWidget()
+        h0 = QHBoxLayout(scroll_content)
+        h0.addSpacing(30)
 
-            self.header = h.Header(self)
-            self.super_layout.addWidget(self.header)
-            #PAGINA index 0
-            home_page = home.Home_Page(self, self.header)
-            self.main_layout.addWidget(home_page)
+        # Aggiunta degli oggetti alla scroll area
+        for oggetto in lista: 
+            UI_og = w.QWidgetSensore(oggetto)
+            h0.addWidget(UI_og)
+            h0.addSpacing(30)
 
-            #PAGINA index 1
-            impo_page = impo.Impostazioni_Page(self, self.header)
-            self.main_layout.addWidget(impo_page)
+        # Aggiunge un'espansione alla fine
+        h0.addStretch()
 
-            #PAGINA index 2
-            senso_page = sensori.Sensori_Page(self, self.header)
-            self.main_layout.addWidget(senso_page)
+        # Imposta il widget contenitore all'interno della scroll area
+        area.setWidget(scroll_content)
 
-            #PAGINA index 3
-            stanze_page = stanze.Stanze_Page(self, self.header)
-            self.main_layout.addWidget(stanze_page)
+        # Aggiungi la scroll area al layout principale
+        layout.addWidget(area)
+        layout.addStretch()
 
-            self.super_layout.addWidget(self.main_layout)
-
-            wid.setLayout(self.super_layout)
-            self.setCentralWidget(wid)
-
-            wid.setAutoFillBackground(True)
-            self.set_background_color()
-            log.log_file(0, "cariacate pagine")
-        except Exception as e: 
-            log.log_file(404, e)
-    
-    def set_background_color(self):
-        p = self.palette()
-        p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
-        self.setPalette(p)
-        
-    def inizializzaUI(self):
-        try:
-            self.main_layout.setCurrentIndex(0) # parte dall widget 0 
-            self.header.set_tipo(0)
-            log.log_file(0, "settata la pagina inizale")
-        except Exception as e: 
-            log.log_file(404, e)
-
-    def change_page(self, index):
-        self.main_layout.setCurrentIndex(index)
-        if index == 0:
-            self.header.set_tipo(0)
-            
-
+        # Imposta il layout principale
+        wid.setLayout(layout)
+        self.setCentralWidget(wid)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

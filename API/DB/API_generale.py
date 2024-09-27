@@ -56,8 +56,7 @@ def create_db():
             
             # Create the STANZE table
             c.execute('''CREATE TABLE IF NOT EXISTS STANZE (
-                            Nome TEXT PRIMARY KEY, 
-                            img TEXT
+                            Nome TEXT PRIMARY KEY
                         )''')
 
             conn.commit()

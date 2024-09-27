@@ -40,5 +40,4 @@
 |      STANZE       |
 |-------------------|
 |  Nome             |    TEXT (Primary Key)  -- Room name, unique identifier for the room
-|  img              |    TEXT  -- File path to the image associated with the room
 |-------------------|

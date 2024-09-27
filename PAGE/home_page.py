@@ -16,7 +16,7 @@ class Home_Page(QWidget):
         self.master = master
         self.master.setWindowTitle("HomePage")
         
-        
+    
         self.header = header
         self.initUI()
 
