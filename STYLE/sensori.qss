@@ -1,0 +1,32 @@
+@font-face {
+    font-family: 'SF Pro';
+    src: url('fonts/SFProDisplay-Regular.woff2') format('woff2'),
+         url('fonts/SFProDisplay-Regular.woff') format('woff'),
+         url('fonts/SFProDisplay-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+QScrollArea
+{
+    border: #f1f1f1;
+    color: #f1f1f1;
+}
+
+QWidget#oggetto
+{
+    color: #f1f1f1;
+}
+
+QWigetSensore#sensore
+{
+    border: #000000 2px solid; 
+    border-radius: 27;
+}
+
+QLabel#titolo
+{
+    color: #000000;
+    font-size: 83px;
+    font-style: bold;
+}

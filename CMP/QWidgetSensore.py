@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QVBoxLayout, QPushButton, QHBoxLayout,QLabel
 from PyQt6.QtGui import QPainter, QColor, QPixmap, QIcon
-from PyQt6.QtCore import QRect, Qt, QTimer
+from PyQt6.QtCore import QRect, Qt, QTimer, QFile, QTextStream
 
 from API import funzioni as f
 from OBJ import OBJ_UI_Sensore as sensore
@@ -88,13 +88,32 @@ class QWidgetSensore(QWidget):
         
             self.layout1.addLayout(h2)
 
-        self.setLayout(self.layout1)
+        wid = QWidget()
+        wid.setLayout(self.layout1)
+        wid.setObjectName("sensore")
+
+        laa = QHBoxLayout()
+        laa.setContentsMargins(0,0,0,0)
+        laa.setSpacing(0)
+
+        laa.addWidget(wid)
+        self.setLayout(laa)
+
         self.setAutoFillBackground(True)
         self.set_background_color()
+        # Load the stylesheet
+        self.load_stylesheet()
 
     def set_background_color(self):
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
         self.setPalette(p)
         
-        
+
+    def load_stylesheet(self):
+        file = QFile(f.get_style("sensore.qss"))
+        if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
+            stream = QTextStream(file)
+            style_sheet = stream.readAll()
+            file.close()
+            self.setStyleSheet(style_sheet)
