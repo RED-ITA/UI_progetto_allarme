@@ -23,8 +23,8 @@ class QWidgetSensore(QWidget):
         |  Stato            |    INTEGER  -- Sensor status: 1 = Active, 0 = Inactive
         |-------------------|
     """
-    signal_parametri = pyqtSignal()
-    signal_cestino = pyqtSignal()
+    signal_parametri = pyqtSignal(int)
+    signal_cestino = pyqtSignal(int)
 
     def __init__(self, obj:sensore.Sensore, parent=None):
         super().__init__()
@@ -113,13 +113,11 @@ class QWidgetSensore(QWidget):
 
     # Metodo per emettere il segnale quando viene premuto il pulsante 'parametri'
     def emit_parametri_signal(self):
-        print(f"premuto parametri del sensore {self.oggetto.Id}")
-        self.signal_parametri.emit()
+        self.signal_parametri.emit(self.oggetto.Id)
 
     # Metodo per emettere il segnale quando viene premuto il pulsante 'cestino'
     def emit_cestino_signal(self):
-        print(f"premuto elimina del sensore {self.oggetto.Id}")
-        self.signal_cestino.emit()
+        self.signal_cestino.emit(self.oggetto.Id)
 
     def set_background_color(self):
         p = self.palette()

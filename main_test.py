@@ -18,7 +18,7 @@ from PAGE import (
 )
 
 class MainWindows(QMainWindow):
-
+    
     def __init__(self):
         super().__init__()
 
@@ -26,16 +26,58 @@ class MainWindows(QMainWindow):
         self.screen_width = screen_geometry.width()
         self.screen_height = screen_geometry.height()
 
-
         self.setGeometry(0, 0, self.screen_width, self.screen_height)
 
-        layout = QVBoxLayout()
-        layout.setSpacing(0)
-        layout.setContentsMargins(0,0,0,0)
-        wid = QWidget()
-        wid.setContentsMargins(0,0,0,0)
-        lista = []
+        # Layout principale
+        self.layout = QVBoxLayout()
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.wid = QWidget()
+        self.wid.setContentsMargins(0, 0, 0, 0)
 
+        # Lista sensori
+        self.lista = self.crea_lista_sensori()
+
+        # Scroll area per sensori attivi e disattivi
+        self.area_attivi = QScrollArea()
+        self.area_disattivi = QScrollArea()
+
+        self.area_attivi.setContentsMargins(0, 0, 0, 0)
+        self.area_attivi.setFixedHeight(350)
+        self.area_attivi.setFixedWidth(self.screen_width)
+        self.area_attivi.setWidgetResizable(True)
+
+        self.area_disattivi.setContentsMargins(0, 0, 0, 0)
+        self.area_disattivi.setFixedHeight(350)
+        self.area_disattivi.setFixedWidth(self.screen_width)
+        self.area_disattivi.setWidgetResizable(True)
+
+        # Label per i titoli
+        self.titolo_attivi = QLabel("Sensori Attivi")
+        self.titolo_attivi.setObjectName("titolo")
+        self.titolo_disattivi = QLabel("Sensori Disattivi")
+        self.titolo_disattivi.setObjectName("titolo")
+
+        # Popolamento iniziale dei sensori
+        self.rigenera_interfaccia()
+
+        # Aggiungi la scroll area al layout principale
+        self.layout.addWidget(self.titolo_attivi)
+        self.layout.addWidget(self.area_attivi)
+        self.layout.addSpacing(50)
+        self.layout.addWidget(self.titolo_disattivi)
+        self.layout.addWidget(self.area_disattivi)
+        self.layout.addStretch()
+
+        # Imposta il layout principale
+        self.wid.setLayout(self.layout)
+        self.setCentralWidget(self.wid)
+
+        self.set_background_color()
+
+    def crea_lista_sensori(self):
+        # Crea una lista di sensori
+        lista = []
         # Creazione degli oggetti Sensore
         oggetto0 = o.Sensore(0, 1, 0, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto0)
@@ -43,108 +85,95 @@ class MainWindows(QMainWindow):
         lista.append(oggetto1)
         oggetto2 = o.Sensore(0, 3, 1, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto2)
-        oggetto3 = o.Sensore(0, 4, 1, "23/13/12", "cucina", 0, 0, 0)
+        oggetto3 = o.Sensore(0, 4, 1, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto3)
         oggetto4 = o.Sensore(0, 5, 2, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto4)
-        oggetto5 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
+        oggetto5 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto5)
-        oggetto6 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
+        oggetto6 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto6)
-        oggetto7 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
+        oggetto7 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto7)
-        oggetto8 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
+        oggetto8 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto8)
-        oggetto9 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
+        oggetto9 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 1)
         lista.append(oggetto9)
         oggetto10 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
         lista.append(oggetto10)
         oggetto11 = o.Sensore(0, 6, 2, "23/13/12", "cucina", 0, 0, 0)
         lista.append(oggetto11)
 
-        # Creazione della QScrollArea
-        area = QScrollArea()
-        area.setContentsMargins(0,0,0,0)
-        area.setFixedHeight(350)
-        area.setFixedWidth(self.screen_width)
-        area.setWidgetResizable(True)  # Permette il ridimensionamento del widget
+        # Aggiungi tutti i sensori
+        return lista
 
-        
+    def rigenera_interfaccia(self):
+        """
+        Ricostruisce l'interfaccia popolando le due aree (attivi e disattivi).
+        """
+        # Rimuovi tutti i widget dalle aree di scorrimento
+        for i in reversed(range(self.area_attivi.layout().count())):
+            widget_to_remove = self.area_attivi.layout().itemAt(i).widget()
+            self.area_attivi.layout().removeWidget(widget_to_remove)
+            widget_to_remove.setParent(None)
 
-        # Creazione della QScrollArea
-        area1 = QScrollArea()
-        area1.setContentsMargins(0,0,0,0)
-        area1.setFixedHeight(350)
-        area1.setFixedWidth(self.screen_width)
-        area1.setWidgetResizable(True)  # Permette il ridimensionamento del widget
+        for i in reversed(range(self.area_disattivi.layout().count())):
+            widget_to_remove = self.area_disattivi.layout().itemAt(i).widget()
+            self.area_disattivi.layout().removeWidget(widget_to_remove)
+            widget_to_remove.setParent(None)
 
-        # Widget interno che conterrà il layout orizzontale
-        scroll_content = QWidget()
-        p = scroll_content.palette()
-        p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
-        scroll_content.setPalette(p)
-        scroll_content.setObjectName("oggetto")
-        h0 = QHBoxLayout(scroll_content)
+        # Layout per sensori attivi
+        scroll_content_attivi = QWidget()
+        h0 = QHBoxLayout(scroll_content_attivi)
         h0.addSpacing(30)
 
-
-        # Widget interno che conterrà il layout orizzontale
-        scroll_content1 = QWidget()
-        p = scroll_content1.palette()
-        p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
-        scroll_content1.setPalette(p)
-        h1 = QHBoxLayout(scroll_content1)
-        scroll_content1.setObjectName("oggetto")
+        # Layout per sensori disattivi
+        scroll_content_disattivi = QWidget()
+        h1 = QHBoxLayout(scroll_content_disattivi)
         h1.addSpacing(30)
 
         # Aggiunta degli oggetti alla scroll area
-        for oggetto in lista: 
-            if oggetto.Stato:
-                UI_og = w.QWidgetSensore(oggetto)
-                UI_og.setObjectName("sensore")
+        for oggetto in self.lista:
+            UI_og = w.QWidgetSensore(oggetto)
+            UI_og.setObjectName("sensore")
+            UI_og.signal_parametri.connect(self.apri_parametri)
+            UI_og.signal_cestino.connect(self.elimina_sensore)
+            
+            if oggetto.Stato:  # Sensore attivo
                 h0.addWidget(UI_og)
                 h0.addSpacing(30)
-            else:
-                UI_og = w.QWidgetSensore(oggetto)
-                UI_og.setObjectName("sensore")
+            else:  # Sensore disattivo
                 h1.addWidget(UI_og)
                 h1.addSpacing(30)
 
-        # Aggiunge un'espansione alla fine
+        # Aggiungi le espansioni finali
         h0.addStretch()
         h1.addStretch()
 
-        # Imposta il widget contenitore all'interno della scroll area
+        # Imposta il widget contenitore all'interno delle scroll area
+        self.area_attivi.setWidget(scroll_content_attivi)
+        self.area_disattivi.setWidget(scroll_content_disattivi)
 
-        titotlo1 = QLabel("Sensori Attivi")
-        titotlo1.setObjectName("titolo")
-        area.setWidget(scroll_content)
+    def apri_parametri(self, sensor_id):
+        print(f"Apertura della schermata parametri per il sensore {sensor_id}")
 
+    def elimina_sensore(self, sensor_id):
+        """
+        Elimina il sensore impostandolo come disattivato e rigenera l'interfaccia.
+        """
+        print(f"Eliminazione del sensore {sensor_id}")
+        for sensore in self.lista:
+            if sensore.Id == sensor_id:
+                sensore.Stato = False  # Imposta lo stato del sensore a False
+                break
         
-        titotlo2 = QLabel("Sensori Disattivi")
-        titotlo2.setObjectName("titolo")
-        area1.setWidget(scroll_content1)
-
-        # Aggiungi la scroll area al layout principale
-        layout.addWidget(titotlo1)
-        layout.addWidget(area)
-        layout.addSpacing(50)
-        layout.addWidget(titotlo2)
-        layout.addWidget(area1)
-        layout.addStretch()
-
-        # Imposta il layout principale
-        wid.setLayout(layout)
-        self.setCentralWidget(wid)
-
-        self.set_background_color()
+        # Rigenera l'interfaccia
+        self.rigenera_interfaccia()
 
     def set_background_color(self):
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
         self.setPalette(p)
-        # Load the stylesheet
-        self.load_stylesheet()
 
     def load_stylesheet(self):
         file = QFile(f.get_style("sensori.qss"))
