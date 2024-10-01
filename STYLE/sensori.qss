@@ -17,12 +17,13 @@ QWidget#oggetto
 {
     color: #f1f1f1;
 }
-
+ /* 
 QWigetSensore#sensore
 {
-    border: #000000 2px solid; 
-    border-radius: 27;
+    border: 2px solid #000000;
+   border-radius: 27; 
 }
+*/
 
 QLabel#titolo
 {

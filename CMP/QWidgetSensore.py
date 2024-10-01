@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QVBoxLayout, QPushButton, QHBoxLayout,QLabel
 from PyQt6.QtGui import QPainter, QColor, QPixmap, QIcon
-from PyQt6.QtCore import QRect, Qt, QTimer, QFile, QTextStream
+from PyQt6.QtCore import QRect, Qt, QTimer, QFile, QTextStream, pyqtSignal
 
 from API import funzioni as f
 from OBJ import OBJ_UI_Sensore as sensore
@@ -23,10 +23,12 @@ class QWidgetSensore(QWidget):
         |  Stato            |    INTEGER  -- Sensor status: 1 = Active, 0 = Inactive
         |-------------------|
     """
+    signal_parametri = pyqtSignal()
+    signal_cestino = pyqtSignal()
 
     def __init__(self, obj:sensore.Sensore, parent=None):
         super().__init__()
-
+        self.oggetto = obj
         self.layout1 = QVBoxLayout()
         self.setFixedSize(300,300)
 
@@ -75,10 +77,14 @@ class QWidgetSensore(QWidget):
         
         if obj.Stato:
             h2 = QHBoxLayout()
-            self.p1 = p.QPushButtonBadge("parametri.png")
+            self.p1 = p.QPushButtonBadge("parametri.png", color="DEDEDE")
             self.p1.setFixedSize(75,75)
-            self.p2 = p.QPushButtonBadge("cestino.png")
+            self.p2 = p.QPushButtonBadge("cestino.png", color="DEDEDE")
             self.p2.setFixedSize(75,75)
+
+             # Connetti i pulsanti ai segnali
+            self.p1.clicked.connect(self.emit_parametri_signal)
+            self.p2.clicked.connect(self.emit_cestino_signal)
 
             h2.addSpacing(10)
             h2.addWidget(self.p1)
@@ -100,20 +106,40 @@ class QWidgetSensore(QWidget):
         self.setLayout(laa)
 
         self.setAutoFillBackground(True)
-        self.set_background_color()
+        #self.set_background_color()
         # Load the stylesheet
         self.load_stylesheet()
+        
+
+    # Metodo per emettere il segnale quando viene premuto il pulsante 'parametri'
+    def emit_parametri_signal(self):
+        print(f"premuto parametri del sensore {self.oggetto.Id}")
+        self.signal_parametri.emit()
+
+    # Metodo per emettere il segnale quando viene premuto il pulsante 'cestino'
+    def emit_cestino_signal(self):
+        print(f"premuto elimina del sensore {self.oggetto.Id}")
+        self.signal_cestino.emit()
 
     def set_background_color(self):
         p = self.palette()
-        p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
+        p.setColor(self.backgroundRole(), QColor.fromRgb(222, 222, 222))
         self.setPalette(p)
+        self.repaint()
         
 
     def load_stylesheet(self):
-        file = QFile(f.get_style("sensore.qss"))
+        qss_file = f.get_style("sensore.qss")
+        if not QFile.exists(qss_file):
+            print(f"File {qss_file} not found.")
+            return
+        file = QFile(qss_file)
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
             stream = QTextStream(file)
             style_sheet = stream.readAll()
             file.close()
             self.setStyleSheet(style_sheet)
+            print("Stylesheet applied successfully.")
+        else:
+            print("Failed to open stylesheet.")
+

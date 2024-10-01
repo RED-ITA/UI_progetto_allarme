@@ -12,9 +12,13 @@ QLabel#titolo
     color: #000000;
     font-size: 40px;
 }
-
-QWidget#sensore
-{
-    border: #000000 2px solid; 
-    border-radius: 27;
+ 
+QWidget#sensore {
+    background-color: #DEDEDE;
+    border-radius: 27px;
+    /*
+    border: 2px solid #000000; 
+    
+    */
 }
+
