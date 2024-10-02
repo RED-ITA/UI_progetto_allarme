@@ -3,6 +3,8 @@ import time
 from API import funzioni as f
 from API.LOG import log_file 
 
+from OBJ import OBJ_UI_Sensore as o
+
 # Number of retries and delay between retries
 MAX_RETRIES = 10
 RETRY_DELAY = 0.1  # in seconds
