@@ -68,7 +68,7 @@ def edit_sensor(sensor_id, new_data):
                          WHERE SensorPk = ?''', (*new_data, sensor_id))
             
             c.execute('''UPDATE SISTEMA 
-                         SET Update = ?
+                         SET Aggiorna = ?
                          WHERE Id = ?''', (1, 1))
 
             conn.commit()
@@ -110,7 +110,7 @@ def delete_sensor(sensor_pk):
                          WHERE SensorPk = ?''', (0, sensor_pk))
             
             c.execute('''UPDATE SISTEMA 
-                         SET Update = ? 
+                         SET Aggiorna = ? 
                          WHERE Id = ?''', (1, 1))
 
             conn.commit()

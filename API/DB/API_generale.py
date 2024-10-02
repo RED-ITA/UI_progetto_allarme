@@ -39,11 +39,11 @@ def create_db():
                             Id INTEGER PRIMARY KEY, 
                             Allarme INTEGER, 
                             Stato INTEGER, 
-                            Update INTEGER, 
+                            Aggiorna INTEGER, 
                             Error INTEGER
                         )''')
             
-            c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Update, Error) 
+            c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Aggiorna, Error) 
                          VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
 
             # Create the LOG table with an auto-incrementing primary key
