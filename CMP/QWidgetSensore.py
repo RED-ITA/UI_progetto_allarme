@@ -113,11 +113,11 @@ class QWidgetSensore(QWidget):
 
     # Metodo per emettere il segnale quando viene premuto il pulsante 'parametri'
     def emit_parametri_signal(self):
-        self.signal_parametri.emit(self.oggetto.Id)
+        self.signal_parametri.emit(self.oggetto.SensorePk)
 
     # Metodo per emettere il segnale quando viene premuto il pulsante 'cestino'
     def emit_cestino_signal(self):
-        self.signal_cestino.emit(self.oggetto.Id)
+        self.signal_cestino.emit(self.oggetto.SensorePk)
 
     def set_background_color(self):
         p = self.palette()
@@ -129,7 +129,6 @@ class QWidgetSensore(QWidget):
     def load_stylesheet(self):
         qss_file = f.get_style("sensore.qss")
         if not QFile.exists(qss_file):
-            print(f"File {qss_file} not found.")
             return
         file = QFile(qss_file)
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
@@ -137,7 +136,4 @@ class QWidgetSensore(QWidget):
             style_sheet = stream.readAll()
             file.close()
             self.setStyleSheet(style_sheet)
-            print("Stylesheet applied successfully.")
-        else:
-            print("Failed to open stylesheet.")
 

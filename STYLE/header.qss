@@ -22,6 +22,21 @@ QLabel#data
 
 }
 
+QLabel#nome1
+{
+    color: #000000;
+    font-size: 100px;
+}
+
+
+QLabel#nome
+{
+    color: #000000;
+    font-size: 50px;
+    font-family: 'SF Pro';
+
+}
+
 QLabel#label
 {
     color: #000000;

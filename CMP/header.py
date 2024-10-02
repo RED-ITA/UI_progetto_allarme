@@ -75,6 +75,12 @@ class Header(QWidget):
             self.sensori()
         elif tipo == 3:
             self.stanze()
+        elif tipo == 4:
+            self.add_sensore()
+        elif tipo == 5:
+            self.edt_sensore()
+
+
 
         
 
@@ -139,12 +145,82 @@ class Header(QWidget):
         # Ora
         v = QVBoxLayout()
         pag = QLabel("pagina")
-        pag.setObjectName("data")
+        pag.setObjectName("nome")
         pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Time label that will be updated
         nome = QLabel("IMPOSTAZIONI")
-        nome.setObjectName("ora")
+        nome.setObjectName("nome1")
+        nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(pag)
+        v.addWidget(nome)
+
+        self.layout_pagina = QHBoxLayout()
+        self.home_button = q.QPushButtonBadge("settings.png")
+        self.home_button.setFixedSize(size_ico, size_ico)
+        self.layout_pagina.setSpacing(0)
+        self.layout_pagina.addWidget(self.home_button)
+
+        self.prima_riga.addSpacing(self.get_icon_size())
+        self.prima_riga.addWidget(self.sos)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(v)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(self.layout_pagina)
+        self.prima_riga.addSpacing(self.get_icon_size())
+        #self.update_time()
+
+    def add_sensore(self):
+        size_ico = int(self.get_icon_size() / 1.8)
+
+        # Navigation bar
+        self.sos = q.QPushButtonBadge("go_back.png")
+        self.sos.clicked.connect(self.back)
+        self.sos.setFixedSize(size_ico, size_ico)
+        # Ora
+        v = QVBoxLayout()
+        pag = QLabel("pagina")
+        pag.setObjectName("nome")
+        pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Time label that will be updated
+        nome = QLabel("AGGIUNGI SENSORE")
+        nome.setObjectName("nome1")
+        nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(pag)
+        v.addWidget(nome)
+
+        self.layout_pagina = QHBoxLayout()
+        self.home_button = q.QPushButtonBadge("settings.png")
+        self.home_button.setFixedSize(size_ico, size_ico)
+        self.layout_pagina.setSpacing(0)
+        self.layout_pagina.addWidget(self.home_button)
+
+        self.prima_riga.addSpacing(self.get_icon_size())
+        self.prima_riga.addWidget(self.sos)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(v)
+        self.prima_riga.addStretch()
+        self.prima_riga.addLayout(self.layout_pagina)
+        self.prima_riga.addSpacing(self.get_icon_size())
+        #self.update_time()
+
+    def edt_sensore(self):
+        size_ico = int(self.get_icon_size() / 1.8)
+
+        # Navigation bar
+        self.sos = q.QPushButtonBadge("go_back.png")
+        self.sos.clicked.connect(self.back)
+        self.sos.setFixedSize(size_ico, size_ico)
+        # Ora
+        v = QVBoxLayout()
+        pag = QLabel("pagina")
+        pag.setObjectName("nome")
+        pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Time label that will be updated
+        nome = QLabel("MODIFICA SENSORE")
+        nome.setObjectName("nome1")
         nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
         v.addWidget(pag)
         v.addWidget(nome)
@@ -174,12 +250,12 @@ class Header(QWidget):
         # Ora
         v = QVBoxLayout()
         pag = QLabel("pagina")
-        pag.setObjectName("data")
+        pag.setObjectName("nome")
         pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Time label that will be updated
         nome = QLabel("SENSORI")
-        nome.setObjectName("ora")
+        nome.setObjectName("nome1")
         nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
         v.addWidget(pag)
         v.addWidget(nome)
@@ -210,12 +286,12 @@ class Header(QWidget):
         # Ora
         v = QVBoxLayout()
         pag = QLabel("pagina")
-        pag.setObjectName("data")
+        pag.setObjectName("nome")
         pag.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Time label that will be updated
         nome = QLabel("STANZE")
-        nome.setObjectName("ora")
+        nome.setObjectName("nome1")
         nome.setAlignment(Qt.AlignmentFlag.AlignCenter)
         v.addWidget(pag)
         v.addWidget(nome)
