@@ -19,7 +19,8 @@
 - [x] Creare la struttura del database
 - [x] Funzioni db per l'UI
 ### Fase c: Svillupo dell'UI II parte
-- [ ] Implementare le funzoni per la pagina Sensori per aggiungere, modificare e rimuovere sensori
+- [x] Implementare le funzoni per la pagina Sensori per aggiungere, modificare e rimuovere sensori
+- [x] Implementare le funzoni per la pagina Stanze per aggiungere, modificare e rimuovere le stanze
 - [ ] Implementare le funzoni per la pagina Rilevamenti per monitorare gli allarmi attivati
 - [ ] Implementare il threading per la reattività della UI
 

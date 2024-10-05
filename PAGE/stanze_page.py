@@ -70,7 +70,6 @@ class Stanze_Page(QWidget):
         self.buttons = {}  # Dizionario per tenere traccia dei pulsanti
 
         stanze_data = db_api.get_all_stanze()
-        self.v_layout_stanze.addStretch()
         for stanza in stanze_data:
             # Crea il pulsante della stanza
             button = QPushButton(stanza[0])
@@ -86,6 +85,7 @@ class Stanze_Page(QWidget):
             button.clicked.connect(lambda checked, nome=stanza[0]: self.on_stanza_clicked(nome))
             self.v_layout_stanze.addWidget(button)
             self.buttons[stanza[0]] = button  # Salva il pulsante per riferimento
+        self.v_layout_stanze.addStretch()
 
         
 
