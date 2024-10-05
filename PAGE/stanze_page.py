@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QPushButton, QLabel, QLineEdit, QDialog, QDialogButtonBox
 from PyQt6.QtCore import QFile, QTextStream, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPixmap
+from PyQt6.QtGui import QColor, QPixmap, QIcon
 
 import sys
 
@@ -68,25 +68,29 @@ class Stanze_Page(QWidget):
         self.v_layout_stanze.addWidget(self.add_stanza_button)
 
         self.buttons = {}  # Dizionario per tenere traccia dei pulsanti
-        self.v_layout_stanze.addStretch()
+
         stanze_data = db_api.get_all_stanze()
+        self.v_layout_stanze.addStretch()
         for stanza in stanze_data:
             # Crea il pulsante della stanza
             button = QPushButton(stanza[0])
             button.setObjectName("stanza_button")
+            button.setStyleSheet("text-align: left;")  # Allinea il testo e l'immagine a sinistra
 
             # Imposta l'icona del pulsante
             pixmap = QPixmap(f.get_img("stanza_nosel"))  # Percorso dell'immagine non selezionata
-            icon = pixmap.scaledToHeight(20)  # Ridimensiona l'immagine
-            button.setIcon(QPixmap(icon))
+            icon = QIcon(pixmap)  # Crea un QIcon a partire da QPixmap
+            button.setIcon(icon)  # Usa l'icona per il pulsante
 
             # Connetti il pulsante alla funzione di click
             button.clicked.connect(lambda checked, nome=stanza[0]: self.on_stanza_clicked(nome))
             self.v_layout_stanze.addWidget(button)
             self.buttons[stanza[0]] = button  # Salva il pulsante per riferimento
 
+        
+
     def on_stanza_clicked(self, stanza_nome):
-        log_file(320, f"Stanza selezionata: {stanza_nome}")
+        log_file(320, f" {stanza_nome}")
 
         # Rimuovi il flag 'selected' da tutti i pulsanti delle stanze e aggiorna l'icona
         for nome, button in self.buttons.items():
@@ -96,19 +100,19 @@ class Stanze_Page(QWidget):
 
             # Cambia l'icona in quella normale
             pixmap = QPixmap(f.get_img("stanza_nosel"))  # Percorso dell'immagine normale
-            icon = pixmap.scaledToHeight(20)
-            button.setIcon(QPixmap(icon))
+            icon = QIcon(pixmap)  # Crea un QIcon a partire da QPixmap
+            button.setIcon(icon)
 
         # Imposta il flag 'selected' sul pulsante della stanza cliccata
-        sender = self.sender()
+        sender = self.buttons[stanza_nome]
         sender.setProperty("selected", True)
         sender.style().unpolish(sender)
         sender.style().polish(sender)
 
         # Cambia l'icona in quella selezionata
         selected_pixmap = QPixmap(f.get_img("stanza_sel"))  # Percorso dell'immagine selezionata
-        selected_icon = selected_pixmap.scaledToHeight(20)
-        sender.setIcon(QPixmap(selected_icon))
+        selected_icon = QIcon(selected_pixmap)  # Crea un QIcon a partire da QPixmap
+        sender.setIcon(selected_icon)
 
         self.populate_sensori(stanza_nome)
 
@@ -146,7 +150,7 @@ class Stanze_Page(QWidget):
         riga_inferiore_layout.addStretch()
 
     def on_sensor_clicked(self, sensor_pk):
-        log_file(340, f"Sensore selezionato: SensorPk {sensor_pk}")
+        log_file(340, f" {sensor_pk}")
         self.signal_sensor_clicked.emit(sensor_pk)
 
     def on_add_stanza_clicked(self):
@@ -175,13 +179,13 @@ class Stanze_Page(QWidget):
     def on_confirm_add_stanza(self, dialog):
         nome_stanza = self.nome_stanza_input.text().strip()
         if nome_stanza:
-            log_file(390, f"Aggiunta nuova stanza: {nome_stanza}")
+            log_file(390, f" {nome_stanza}")
             result = db_api.add_stanza(nome_stanza)
             if result:
-                log_file(391, f"Stanza '{nome_stanza}' aggiunta con successo.")
+                log_file(391, f" '{nome_stanza}' ")
                 self.populate_stanze()
             else:
-                log_file(392, f"Errore nell'aggiunta della stanza '{nome_stanza}'.")
+                log_file(392, f" '{nome_stanza}'.")
         dialog.accept()
 
     def clear_layout(self, layout):
