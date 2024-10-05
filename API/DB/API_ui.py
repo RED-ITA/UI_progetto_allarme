@@ -239,3 +239,68 @@ def get_sensor_by_pk(sensor_pk):
     except Exception as e:
         log_file(2003, f"Errore recuperando il sensore {sensor_pk}: {e}")
         return None
+    
+
+def add_stanza(nome_stanza):
+    """
+    Adds a new room to the STANZE table.
+    
+    Args:
+        nome_stanza (str): The name of the room to add.
+    
+    Retries if the database is locked and returns 1 on success and 0 on failure.
+    """
+    log_file(2014, f"Aggiunta stanza con nome '{nome_stanza}'")
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect(f.get_db())
+            c = conn.cursor()
+
+            # Inserisce una nuova stanza
+            c.execute('''INSERT INTO STANZE (Nome) VALUES (?)''', (nome_stanza,))
+
+            conn.commit()
+            conn.close()
+            log_file(2015, f"'{nome_stanza}'")
+            return 1  # Success
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                log_file(2002, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
+                time.sleep(RETRY_DELAY)
+            else:
+                log_file(2003, f"Errore aggiungendo la stanza: {e}")
+                return 0  # Failure
+        except sqlite3.IntegrityError:
+            log_file(2010, f"Errore: Stanza con nome '{nome_stanza}' esiste già.")
+            return 0  # Failure
+        except Exception as e:
+            log_file(2003, f"Errore aggiungendo la stanza: {e}")
+            return 0  # Failure
+    log_file(2001, "Fallimento nell'aggiunta della stanza dopo vari tentativi")
+    return 0  # Failure after retries
+
+
+def get_sensori_by_stanza(stanza_nome):
+    """
+    Retrieves all sensors for a specific room from the SENSORI table.
+
+    Args:
+        stanza_nome (str): The name of the room.
+
+    Returns:
+        list: A list of tuples with all sensor data for the specified room.
+    """
+    log_file(2016, f" {stanza_nome}")
+    try:
+        conn = sqlite3.connect(f.get_db())
+        c = conn.cursor()
+
+        c.execute('SELECT * FROM SENSORI WHERE Stanza = ? AND Stato = 1', (stanza_nome,))
+        sensori = c.fetchall()
+
+        conn.close()
+        log_file(2000, f"Recupero dei sensori per la stanza '{stanza_nome}' riuscito")
+        return sensori
+    except Exception as e:
+        log_file(2003, f"Errore recuperando i sensori per la stanza '{stanza_nome}': {e}")
+        return []

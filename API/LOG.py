@@ -27,6 +27,14 @@ def setup_logger():
     logger = logging.getLogger('my_logger')
     logger.setLevel(logging.DEBUG)  # Set the minimum logger level
 
+    # Specify the directory for log files
+    log_directory = f.get_resource_path(os.path.join("data", "logs"))
+    # Ensure the directory exists
+    os.makedirs(log_directory, exist_ok=True)
+
+    # Clear all log files except WARNING, ERROR, and CRITICAL
+    clear_logs(log_directory)
+
     # Colored formatter configuration for console output
     color_formatter = ColoredFormatter(
         "%(log_color)s%(asctime)s - %(levelname)s - %(message)s",
@@ -41,10 +49,6 @@ def setup_logger():
         }
     )
     
-    # Specify the directory for log files
-    log_directory = f.get_resource_path(os.path.join("data", "logs"))
-    # Ensure the directory exists
-    os.makedirs(log_directory, exist_ok=True)
     # Full paths for log files
     app_log_path = os.path.join(log_directory, 'app.log')
     thread_log_path = os.path.join(log_directory, 'thread.log')
@@ -85,11 +89,24 @@ def setup_logger():
 
     return logger
 
+# Function to clear log files except WARNING, ERROR, and CRITICAL
+def clear_logs(log_directory):
+    for log_file in ['app.log', 'thread.log', 'db.log']:
+        log_path = os.path.join(log_directory, log_file)
+        if os.path.exists(log_path):
+            with open(log_path, 'r') as file:
+                lines = file.readlines()
+            with open(log_path, 'w') as file:
+                for line in lines:
+                    if any(level in line for level in ['WARNING', 'ERROR', 'CRITICAL']):
+                        file.write(line)
+
 # Initialize the logger
 logger = setup_logger()
 
 # Dictionary mapping codes to log levels and messages
 log_messages = {
+    # Codici generali
     0: ('SUCCESS', 'Avvio:'),
     100: ('INFO', 'Inizializzazione dell\'interfaccia utente'),
     110: ('INFO', 'Inizializzazione dei sensori'),
@@ -104,13 +121,21 @@ log_messages = {
     200: ('INFO', 'Caricamento del file di stile'),
     210: ('INFO', 'Pulsante "Aggiungi Sensore" cliccato'),
     220: ('INFO', 'Sensore cliccato per modifica'),
-    101: ('INFO', 'Configurazione Richiesta'),
+    300: ('INFO', 'Inizializzazione dell\'interfaccia Stanze_Page'),
+    310: ('INFO', 'Popolamento della scroll area con le stanze disponibili'),
+    320: ('INFO', 'Stanza selezionata'),
+    330: ('INFO', 'Popolamento della scroll area con i sensori per la stanza selezionata'),
+    340: ('INFO', 'Sensore selezionato'),
+    350: ('DEBUG', 'Svuotamento del layout'),
+    360: ('INFO', 'Impostazione del colore di sfondo'),
+    370: ('INFO', 'Caricamento del file di stile'),
+    380: ('INFO', 'Pulsante "Aggiungi Stanza" cliccato'),
+    390: ('INFO', 'Aggiunta nuova stanza'),
+    391: ('INFO', 'Stanza aggiunta con successo'),
+    392: ('ERROR', 'Errore nell\'aggiunta della stanza'),
     404: ('WARNING', 'Errore sconosciuto'),
     999: ('DEBUG', 'Sviluppo'),
-    1000: ('INFO', 'Thread: '),
-    1001: ('WARNING', 'Thread: '),
-    1002: ('SUCCESS', 'Thread: '),
-
+    
     # Database operation codes
     2000: ('INFO', 'Operazione sul database riuscita'),
     2001: ('ERROR', 'Operazione sul database fallita'),
@@ -126,6 +151,8 @@ log_messages = {
     2011: ('INFO', 'Recupero di tutte le stanze dal database'),
     2012: ('INFO', 'Recupero di tutti i sensori dal database'),
     2013: ('INFO', 'Recupero di tutti i log dal database'),
+    2015: ('INFO', 'aggiunta con successo:'),
+    2016: ('INFO', 'Recupero di tutti i sensori per la stanza:'),
     # ... aggiungi altri codici se necessario
 }
 

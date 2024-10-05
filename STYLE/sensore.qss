@@ -7,7 +7,7 @@
     font-style: normal;
 }
 
-QLabel#titolo
+QLabel#titolo1
 {
     color: #000000;
     font-size: 40px;

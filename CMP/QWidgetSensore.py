@@ -66,7 +66,7 @@ class QWidgetSensore(QWidget):
         
         h1 = QHBoxLayout()
         titolo_label=QLabel(nome)
-        titolo_label.setObjectName("titolo")
+        titolo_label.setObjectName("titolo1")
 
         h1.addStretch()
         h1.addWidget(titolo_label)

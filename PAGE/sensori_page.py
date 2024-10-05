@@ -2,7 +2,7 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtCore import QFile, QTextStream, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QLabel, QVBoxLayout,
-    QWidget, QHBoxLayout, QScrollArea,QPushButton
+    QWidget, QHBoxLayout, QScrollArea, QPushButton
 )
 import sys
 
@@ -24,7 +24,6 @@ class Sensori_Page(QWidget):
         self.master.setWindowTitle("ImpoPage")
         self.header = header
         
-
         self.main_layout = QVBoxLayout()
         self.init_ui()
 
@@ -33,7 +32,7 @@ class Sensori_Page(QWidget):
         self.set_background_color()
 
     def init_ui(self):
-        log_file(100, "Inizializzazione dell'interfaccia utente")
+        log_file(100)
         # Imposta le dimensioni della finestra
         screen_geometry = QApplication.primaryScreen().geometry()
         self.screen_width = screen_geometry.width()
@@ -50,7 +49,7 @@ class Sensori_Page(QWidget):
         self.set_background_color()
 
     def init_sensors(self):
-        log_file(110, "Inizializzazione dei sensori")
+        log_file(110)
         # Recupera tutti i sensori dal database
         sensors_data = db_api.get_all_sensori()
         self.lista_sensori = []
@@ -70,7 +69,7 @@ class Sensori_Page(QWidget):
             self.lista_sensori.append(sensor)
 
     def build_ui(self):
-        log_file(160, "Costruzione dell'interfaccia utente")
+        log_file(160)
         # Crea il widget centrale e il layout principale
         self.central_widget = QWidget()
         self.central_widget.setContentsMargins(0, 0, 0, 0)
@@ -92,9 +91,8 @@ class Sensori_Page(QWidget):
         # Popola le scroll area con i widget dei sensori
         self.populate_scroll_areas()
 
-
     def create_scroll_areas(self):
-        log_file(170, "Creazione delle aree di scorrimento per sensori attivi e inattivi")
+        log_file(170)
         # Scroll area per sensori attivi
         self.area_active = QScrollArea()
         self.area_active.setFixedHeight(300)
@@ -140,7 +138,7 @@ class Sensori_Page(QWidget):
         self.main_layout.addStretch()
 
     def populate_scroll_areas(self):
-        log_file(150, "Popolamento delle aree di scorrimento con i widget dei sensori")
+        log_file(150)
         # Svuota le layout prima di popolarle
         self.clear_layout(self.h_layout_active)
         self.clear_layout(self.h_layout_inactive)
@@ -163,14 +161,14 @@ class Sensori_Page(QWidget):
         self.h_layout_inactive.addStretch()
 
     def clear_layout(self, layout):
-        log_file(180, "Svuotamento del layout")
+        log_file(180)
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
     def refresh_ui(self):
-        log_file(140, "Aggiornamento dell'interfaccia utente")
+        log_file(140)
         # Ripopola le scroll area con i sensori aggiornati
         self.populate_scroll_areas()
 
@@ -187,7 +185,7 @@ class Sensori_Page(QWidget):
         self.refresh_ui()
 
     def on_add_sensor_clicked(self):
-        log_file(210, "Pulsante 'Aggiungi Sensore' cliccato")
+        log_file(210)
         # Emette un segnale per informare il MainWindows di cambiare pagina
         self.signal_add_sensor.emit()
 
@@ -196,9 +194,8 @@ class Sensori_Page(QWidget):
         # Emette un segnale per informare il MainWindows di aprire la pagina di modifica del sensore
         self.signal_edit_sensor.emit(sensor_pk)
 
-
     def set_background_color(self):
-        log_file(190, "Impostazione del colore di sfondo")
+        log_file(190)
         # Imposta il colore di sfondo
         palette = self.palette()
         palette.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
@@ -206,7 +203,7 @@ class Sensori_Page(QWidget):
         self.load_stylesheet()
 
     def load_stylesheet(self):
-        log_file(200, "Caricamento del file di stile")
+        log_file(200)
         # Carica il file di stile
         file = QFile(f.get_style("sensori.qss"))
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
