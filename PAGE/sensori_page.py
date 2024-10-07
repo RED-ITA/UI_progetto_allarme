@@ -9,7 +9,11 @@ import sys
 from API import funzioni as f
 from API.DB import API_ui as db_api
 from OBJ import OBJ_UI_Sensore as o
-from CMP import QWidgetSensore as w
+from CMP import (
+    QPushButtonBadge as q,
+    QWidgetSensore as w, 
+    QPushButtonNoBadge as qn, 
+    )
 from API.LOG import log_file
 
 class Sensori_Page(QWidget):
@@ -78,12 +82,21 @@ class Sensori_Page(QWidget):
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
          # Pulsante per aggiungere un nuovo sensore
-        self.add_sensor_button = QPushButton("Aggiungi Sensore")
-        self.add_sensor_button.setObjectName("add_sensor_button")
+        self.add_sensor_button = qn.QPushButtonBadge(f.get_img("plus.png")) 
+        self.add_sensor_button.setFixedSize(51,50)
+        self.add_sensor_button.setContentsMargins(20,10,0,50)
         self.add_sensor_button.clicked.connect(self.on_add_sensor_clicked)
-
+        label = QLabel("Aggiungi Sensore")
+        label.setObjectName("add")
+        
         # Aggiungi il pulsante al layout
-        self.main_layout.addWidget(self.add_sensor_button)
+        h0 = QHBoxLayout()
+        h0.addSpacing(30)
+        h0.addWidget(self.add_sensor_button)
+        h0.addSpacing(30)
+        h0.addWidget(label)
+        h0.addStretch()
+        self.main_layout.addLayout(h0)
 
         # Crea le scroll area per sensori attivi e inattivi
         self.create_scroll_areas()

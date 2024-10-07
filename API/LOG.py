@@ -133,6 +133,7 @@ log_messages = {
     390: ('INFO', 'Aggiunta nuova stanza'),
     391: ('INFO', 'Stanza aggiunta con successo'),
     392: ('ERROR', 'Errore nell\'aggiunta della stanza'),
+    400: ('INFO', 'Interfaccia aggiornata con l\'ora corrente e le stanze disponibili.'),
     404: ('WARNING', 'Errore sconosciuto'),
     999: ('DEBUG', 'Sviluppo'),
     

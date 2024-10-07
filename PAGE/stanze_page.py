@@ -6,8 +6,11 @@ import sys
 
 from API import funzioni as f
 from API.DB import API_ui as db_api
-from CMP import QPushButtonBadge as q
-from CMP import QWidgetSensore as w
+from CMP import (
+    QPushButtonBadge as q,
+    QWidgetSensore as w, 
+    QPushButtonNoBadge as qn, 
+    )
 from API.LOG import log_file
 from OBJ import OBJ_UI_Sensore as o
 
@@ -62,10 +65,11 @@ class Stanze_Page(QWidget):
         self.clear_layout(self.v_layout_stanze)
 
         # Pulsante per aggiungere una nuova stanza
-        self.add_stanza_button = QPushButton("Aggiungi Stanza")
-        self.add_stanza_button.setObjectName("add_stanza_button")
+        self.add_stanza_button = qn.QPushButtonBadge(f.get_img("plus.png")) 
+        self.add_stanza_button.setFixedSize(51,50)
         self.add_stanza_button.clicked.connect(self.on_add_stanza_clicked)
         self.v_layout_stanze.addWidget(self.add_stanza_button)
+        self.v_layout_stanze.addSpacing(50)
 
         self.buttons = {}  # Dizionario per tenere traccia dei pulsanti
 

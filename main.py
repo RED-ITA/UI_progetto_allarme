@@ -115,7 +115,7 @@ class MainWindows(QMainWindow):
         self.sensor_form_page.tipo_field.setCurrentIndex(0)
         self.sensor_form_page.data_field.clear()
         self.sensor_form_page.stanza_field.clear()
-        self.sensor_form_page.soglia_field.clear()
+        self.sensor_form_page.update_ui()
         # Imposta una variabile per indicare che stiamo aggiungendo un nuovo sensore
         self.sensor_form_page.edit_mode = False
         # Cambia pagina
