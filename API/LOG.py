@@ -138,21 +138,21 @@ log_messages = {
     999: ('DEBUG', 'Sviluppo'),
     
     # Database operation codes
-    2000: ('INFO', 'Operazione sul database riuscita'),
+    2000: ('SUCCESS', 'Operazione sul database riuscita'),
     2001: ('ERROR', 'Operazione sul database fallita'),
-    2002: ('WARNING', 'Database bloccato, riprovo'),
+    2002: ('INFO', 'Database bloccato, riprovo'),
     2003: ('ERROR', 'Errore del database'),
     2004: ('INFO', 'Aggiunta sensore al database'),
-    2005: ('INFO', 'Sensore aggiunto con successo'),
+    2005: ('SUCCESS', 'Sensore aggiunto con successo'),
     2006: ('INFO', 'Modifica sensore nel database'),
-    2007: ('INFO', 'Sensore modificato con successo'),
+    2007: ('SUCCESS', 'Sensore modificato con successo'),
     2008: ('INFO', 'Eliminazione sensore dal database'),
-    2009: ('INFO', 'Sensore eliminato con successo'),
+    2009: ('SUCCESS', 'Sensore eliminato con successo'),
     2010: ('ERROR', 'Sensore con questo ID esiste già'),
     2011: ('INFO', 'Recupero di tutte le stanze dal database'),
     2012: ('INFO', 'Recupero di tutti i sensori dal database'),
     2013: ('INFO', 'Recupero di tutti i log dal database'),
-    2015: ('INFO', 'aggiunta con successo:'),
+    2015: ('SUCCESS', 'aggiunta con successo:'),
     2016: ('INFO', 'Recupero di tutti i sensori per la stanza:'),
     # ... aggiungi altri codici se necessario
 }

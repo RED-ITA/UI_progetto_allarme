@@ -27,6 +27,10 @@ def add_sensor(sensor_data):
             parameters = sensor_data + (1,)  # Aggiunge Stato = 1
             c.execute('''INSERT INTO SENSORI (Id, Tipo, Data, Stanza, Soglia, Error, Stato) 
                          VALUES (?, ?, ?, ?, ?, ?, ?)''', parameters)
+            
+            c.execute('''UPDATE SISTEMA 
+                         SET Aggiorna = ?
+                         WHERE Id = ?''', (1, 1))
 
             conn.commit()
             conn.close()

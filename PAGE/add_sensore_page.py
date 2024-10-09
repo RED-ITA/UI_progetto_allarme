@@ -56,6 +56,7 @@ class SensorFormPage(QWidget):
         self.soglia_slider.valueChanged.connect(self.on_soglia_slider_changed)
 
         self.soglia_value_label = QLabel("0")  # Mostra il valore corrente della soglia
+        self.soglia_value_label.setFixedSize(150,50)
         self.soglia_value_label.setObjectName("sogliaValueLabel")
 
         soglia_layout = QHBoxLayout()

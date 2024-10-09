@@ -1,11 +1,14 @@
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMainWindow, QApplication, QLabel, QDialog
-from PyQt6.QtCore import QFile, QTextStream, QSize, Qt, QTimer, QTime
-from PyQt6.QtGui import QColor, QPalette
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QGridLayout, QLabel
+from PyQt6.QtCore import QFile, QTextStream, Qt
+from PyQt6.QtGui import QColor
 
 import sys
 
 from API import funzioni as f
-from CMP import QPushButtonBadge as q
+from CMP import (
+    QPushButtonBadge as q,
+    QPushButtonNoBadge as qn
+)
 
 
 class Tastierino(QDialog):
@@ -16,7 +19,8 @@ class Tastierino(QDialog):
         self.master = master
         self.master.setWindowTitle("ImpoPage")
         self.header = header
-        
+
+        self.current_value = ""
 
         self.main_layout = QVBoxLayout()
         self.initUI()
@@ -26,7 +30,39 @@ class Tastierino(QDialog):
         self.set_background_color()
 
     def initUI(self):
+        # Label to show the number entered
+        self.display_label = QLabel("0")
+        self.display_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.display_label.setStyleSheet("font-size: 24px; padding: 10px;")
+        self.main_layout.addWidget(self.display_label)
+
+        # Widget containing the grid layout for buttons
+        wid = QWidget()
+        l = QGridLayout()
+
+        # Create number buttons from 0-9
+        self.buttons = {}
+        positions = [(i, j) for i in range(4) for j in range(3)]
+        numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '']
+
+        for position, number in zip(positions, numbers):
+            if number:
+                button = qn.QPushButtonBadge(f.get_img(f"{number}.png"))
+                button.setFixedSize(50,50)
+                button.clicked.connect(lambda checked, num=number: self.button_pressed(num))
+                l.addWidget(button, *position)
+                self.buttons[number] = button
+
+        wid.setLayout(l)
+        self.main_layout.addWidget(wid)
         self.main_layout.addStretch()
+
+    def button_pressed(self, number):
+        if self.current_value == "0":
+            self.current_value = number
+        else:
+            self.current_value += number
+        self.display_label.setText(self.current_value)
 
     def set_background_color(self):
         p = self.palette()

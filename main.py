@@ -74,6 +74,12 @@ class MainWindows(QMainWindow):
             self.sensor_form_page = add_sensore.SensorFormPage(self.header)
             self.main_layout.addWidget(self.sensor_form_page)
 
+            # PAGINA index 5 - Pagina del tastierino
+            self.tastierino_form_page = tastierino.Tastierino(self, self.header)
+            self.main_layout.addWidget(self.tastierino_form_page)
+
+            
+
             # Connetti i segnali del form del sensore
             self.sensor_form_page.signal_back.connect(self.back_to_sensors_page)
             self.sensor_form_page.signal_save_sensor.connect(self.save_sensor_data)
