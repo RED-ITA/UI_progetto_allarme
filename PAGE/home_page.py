@@ -153,6 +153,7 @@ class Home_Page(QWidget):
 
     def disattiva(self):
         print("disattiva-tentativo")
+        self.master.tastierino_form_page.reset_ui()
         self.master.change_page(5)
 
     def disattiva_passato(self):

@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QGridLayout, QLabel, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QGridLayout, QLabel, QHBoxLayout, QMessageBox
 from PyQt6.QtCore import QFile, QTextStream, Qt, QSize, QRect
 from PyQt6.QtGui import QColor, QFont, QPainter, QIcon
 
@@ -8,12 +8,11 @@ from API import funzioni as f
 from CMP import (
     QPushButtonBadge as q,
     QTastierino as qn,
-    QDispalyNumpad as qd,
-    QmessaggeNew as qm
+    QDispalyNumpad as qd
 )
 
 
-class Tastierino(QDialog):
+class Tastierino(QWidget):
 
     def __init__(self, master, header):
         super().__init__()
@@ -100,24 +99,46 @@ class Tastierino(QDialog):
                     self.master.tastierino_pass()
                 else:
                     self.cont_error += 1
-                    ico = QIcon(f.get_img("bell_orange.png"))
-                    error = qm.QCustomModals.ErrorModal(
-                        title=f"Errore {self.cont_error}",  # Title of the modal dialog
-                        parent=self.master,  # Parent widget to which the modal belongs
-                        position='top-right',  # Position to display the modal dialog
-                        closeIcon=ico,  # Path to the close icon image
-                        description=f"{3 - self.cont_error} tentativi rimasti",  # Description text displayed in the modal dialog
-                        isClosable=False,  # Whether the modal dialog is closable (True or False)
-                        duration=3000  # Duration (in milliseconds) for which the modal dialog remains visible
-                    )
-                    # Show the modal
-                    error.show()
+                    print("conta")
                     self.current_value = ""
-                    if self.cont_error > 3:  
+                    if self.cont_error > 2:  
                         self.master.tastierino_err()
-       
-           
+                    else:
+                        self.message_error()
+                    
+                    
 
+    def message_error(self):
+        ico = QIcon(f.get_img("bell_orange.png"))
+        titolo = f"Errore {self.cont_error}"
+        desc = f"{3 - self.cont_error} tentativi rimasti"
+
+        # Disabilita i pulsanti per evitare ulteriori interazioni
+        for button in self.buttons.values():
+            button.setEnabled(False)
+
+        errore = QMessageBox(self)
+        errore.setWindowTitle(titolo)
+        errore.setText(desc)
+        errore.setIcon(QMessageBox.Icon.Warning)
+        errore.setStandardButtons(QMessageBox.StandardButton.Ok)
+        errore.setWindowIcon(ico)
+
+        # Connetti il segnale al metodo per gestire l'azione dopo la chiusura
+        errore.buttonClicked.connect(self.handle_messagebox_click)
+
+        errore.exec()
+
+    def handle_messagebox_click(self, button):
+        # Riabilita i pulsanti dopo la chiusura del QMessageBox
+        for button in self.buttons.values():
+            button.setEnabled(True)
+
+        # Reset il valore corrente dopo la chiusura del QMessageBox
+        self.current_value = ""
+        self.pin_display.update_display(self.current_value)
+
+        
     def set_background_color(self):
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
