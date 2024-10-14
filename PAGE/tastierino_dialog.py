@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QGridLayout, QLabel, QHBoxLayout
 from PyQt6.QtCore import QFile, QTextStream, Qt, QSize, QRect
-from PyQt6.QtGui import QColor, QFont, QPainter
+from PyQt6.QtGui import QColor, QFont, QPainter, QIcon
 
 import sys
 
@@ -8,7 +8,8 @@ from API import funzioni as f
 from CMP import (
     QPushButtonBadge as q,
     QTastierino as qn,
-    QDispalyNumpad as qd
+    QDispalyNumpad as qd,
+    QmessaggeNew as qm
 )
 
 
@@ -21,6 +22,7 @@ class Tastierino(QDialog):
         self.master.setWindowTitle("ImpoPage")
         self.header = header
 
+        self.cont_error = 0
         self.current_value = ""
 
         self.main_layout = QVBoxLayout()
@@ -95,7 +97,25 @@ class Tastierino(QDialog):
                         but.setEnabled(True)
             elif number == "v":
                 if self.current_value == "123457":
-                    self.master.change_page(0)
+                    self.master.tastierino_pass()
+                else:
+                    self.cont_error += 1
+                    ico = QIcon(f.get_img("bell_orange.png"))
+                    error = qm.QCustomModals.ErrorModal(
+                        title=f"Errore {self.cont_error}",  # Title of the modal dialog
+                        parent=self.master,  # Parent widget to which the modal belongs
+                        position='top-right',  # Position to display the modal dialog
+                        closeIcon=ico,  # Path to the close icon image
+                        description=f"{3 - self.cont_error} tentativi rimasti",  # Description text displayed in the modal dialog
+                        isClosable=False,  # Whether the modal dialog is closable (True or False)
+                        duration=3000  # Duration (in milliseconds) for which the modal dialog remains visible
+                    )
+                    # Show the modal
+                    error.show()
+                    self.current_value = ""
+                    if self.cont_error > 3:  
+                        self.master.tastierino_err()
+       
            
 
     def set_background_color(self):
@@ -108,7 +128,7 @@ class Tastierino(QDialog):
     def reset_ui(self):
         # Reset il valore corrente
         self.current_value = ""
-
+        self.cont_error = 0
         # Reset il display
         self.pin_display.update_display(self.current_value)
 

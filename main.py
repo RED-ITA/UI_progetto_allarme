@@ -51,8 +51,8 @@ class MainWindows(QMainWindow):
             self.super_layout.addWidget(self.header)
             
             # PAGINA index 0
-            home_page = home.Home_Page(self, self.header)
-            self.main_layout.addWidget(home_page)
+            self.home_page = home.Home_Page(self, self.header)
+            self.main_layout.addWidget(self.home_page)
 
             # PAGINA index 1
             impo_page = impo.Impostazioni_Page(self, self.header)
@@ -94,6 +94,15 @@ class MainWindows(QMainWindow):
             log.log_file(0, "cariacate pagine")
         except Exception as e: 
             log.log_file(404, e)
+
+    def tastierino_pass(self):
+        print("passato")
+        self.home_page.disattiva_passato()
+        self.change_page(0)
+
+    def tastierino_err(self):
+        print("errore")
+        self.change_page(0)
     
     def set_background_color(self):
         p = self.palette()

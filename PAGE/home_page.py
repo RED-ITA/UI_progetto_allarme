@@ -152,10 +152,12 @@ class Home_Page(QWidget):
         self.deactivate_button.setVisible(True)
 
     def disattiva(self):
-        print("disattiva")
+        print("disattiva-tentativo")
+        self.master.change_page(5)
+
+    def disattiva_passato(self):
         self.deactivate_button.setVisible(False)
         self.activate_button.setVisible(True)
-        self.master.change_page(5)
         
     def rilevamenti(self):
         print("rilevamenti")
