@@ -12,9 +12,19 @@
 ## Fase 2: Sviluppo dell’Interfaccia Grafica (UI) 
 ### Fase a: Svillupo dell'UI I parte
 - [x] Mockups UI
+- [x] Creare l'header 
+    - [x] Creare un thread timer
 - [x] Creare la Home Page con stato del sistema
 - [x] Creare la pagina Sensori 
+    - [x] Gestione dinamiche Sensori
+    - [x] Gestione dinamiche aggiungi Sensori
+    - [x] Gestione dinamiche modifica Sensori
+    - [x] Gestione dinamiche elimina Sensori
 - [x] Creare la pagina Stanze 
+    - [x] Gestione dinamiche Stanze
+    - [x] Gestione dinamiche elimina Stanze
+- [x] Creare la pagina tastierino
+    - [x] Gestione dinamiche tastierino 
 ### Fase b: Strutturazione DB UI
 - [x] Creare la struttura del database
 - [x] Funzioni db per l'UI
