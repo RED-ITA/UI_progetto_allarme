@@ -18,7 +18,7 @@ def add_sensor(sensor_data):
     
     Retries if the database is locked and returns 1 on success and 0 on failure.
     """
-    log_file(2004, f"Aggiunta sensore con dati {sensor_data}")  # Log prima dell'operazione
+    log_file(2001)
     for attempt in range(MAX_RETRIES):
         try:
             conn = sqlite3.connect(f.get_db())
@@ -34,22 +34,22 @@ def add_sensor(sensor_data):
 
             conn.commit()
             conn.close()
-            log_file(2005, f"Sensore aggiunto con successo: {sensor_data}")  # Messaggio di successo
+            log_file(2101)
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2002, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
+                log_file(2000)
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2003, f"Errore aggiungendo il sensore: {e}")
+                log_file(2400)
                 return 0  # Failure
         except sqlite3.IntegrityError:
-            log_file(2010, "Errore: Sensore con questo ID esiste già.")
+            log_file(2402)
             return 0  # Failure
         except Exception as e:
-            log_file(2003, f"Errore aggiungendo il sensore: {e}")
+            log_file(2400)
             return 0  # Failure
-    log_file(2001, "Fallimento nell'aggiunta del sensore dopo vari tentativi")
+    log_file(2400)
     return 0  # Failure after retries
 
 def edit_sensor(sensor_id, new_data):
@@ -63,7 +63,7 @@ def edit_sensor(sensor_id, new_data):
     Also updates the SISTEMA table's Update field to 1. Retries if the database is locked and
     returns 1 on success and 0 on failure.
     """
-    log_file(2006, f"Modifica del sensore con SensorPk {sensor_id}")
+    log_file(2002, f"Evento su componente specifico: {sensor_id}")
     for attempt in range(MAX_RETRIES):
         try:
             conn = sqlite3.connect(f.get_db())
@@ -79,19 +79,19 @@ def edit_sensor(sensor_id, new_data):
 
             conn.commit()
             conn.close()
-            log_file(2007, f"Sensore modificato con successo: SensorPk {sensor_id}")
+            log_file(2102, f"Evento completato su componente specifico: {sensor_id}")
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2002, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
+                log_file(2000)
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2003, f"Errore modificando il sensore: {e}")
+                log_file(2400)
                 return 0  # Failure
         except Exception as e:
-            log_file(2003, f"Errore modificando il sensore: {e}")
+            log_file(2400)
             return 0  # Failure
-    log_file(2001, "Fallimento nella modifica del sensore dopo vari tentativi")
+    log_file(2400)
     return 0  # Failure after retries
 
 def delete_sensor(sensor_pk):
@@ -104,7 +104,7 @@ def delete_sensor(sensor_pk):
     Also updates the SISTEMA table's Update field to 1. Retries if the database is locked 
     and returns 1 on success and 0 on failure.
     """
-    log_file(2008, f"Eliminazione del sensore con SensorPk {sensor_pk}")
+    log_file(2003, f"Evento su componente specifico: {sensor_pk}")
     for attempt in range(MAX_RETRIES):
         try:
             conn = sqlite3.connect(f.get_db())
@@ -121,19 +121,19 @@ def delete_sensor(sensor_pk):
 
             conn.commit()
             conn.close()
-            log_file(2009, f"Sensore eliminato con successo: SensorPk {sensor_pk}")
+            log_file(2103, f"Evento completato su componente specifico: {sensor_pk}")
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2002, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
+                log_file(2000)
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2003, f"Errore eliminando il sensore: {e}")
+                log_file(2400)
                 return 0  # Failure
         except Exception as e:
-            log_file(2003, f"Errore eliminando il sensore: {e}")
+            log_file(2400)
             return 0  # Failure
-    log_file(2001, "Fallimento nell'eliminazione del sensore dopo vari tentativi")
+    log_file(2400)
     return 0  # Failure after retries
 
 def get_all_stanze():
@@ -143,7 +143,7 @@ def get_all_stanze():
     Returns:
         list: A list of tuples with all room data.
     """
-    log_file(2011, "Recupero di tutte le stanze dal database")
+    log_file(2004)
     try:
         conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
@@ -152,10 +152,10 @@ def get_all_stanze():
         stanze = c.fetchall()
 
         conn.close()
-        log_file(2000, "Recupero delle stanze riuscito")
+        log_file(2100)
         return stanze
     except Exception as e:
-        log_file(2003, f"Errore recuperando le stanze: {e}")
+        log_file(2400)
         return []
 
 def get_all_sensori():
@@ -165,7 +165,7 @@ def get_all_sensori():
     Returns:
         list: A list of tuples with all sensor data.
     """
-    log_file(2012, "Recupero di tutti i sensori dal database")
+    log_file(2005)
     try:
         conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
@@ -174,10 +174,10 @@ def get_all_sensori():
         sensori = c.fetchall()
 
         conn.close()
-        log_file(2000, "Recupero dei sensori riuscito")
+        log_file(2100)
         return sensori
     except Exception as e:
-        log_file(2003, f"Errore recuperando i sensori: {e}")
+        log_file(2400)
         return []
 
 def get_all_logs():
@@ -187,7 +187,7 @@ def get_all_logs():
     Returns:
         list: A list of tuples with the combined log and sensor data.
     """
-    log_file(2013, "Recupero di tutti i log dal database")
+    log_file(2006)
     try:
         conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
@@ -200,12 +200,11 @@ def get_all_logs():
         
         logs = c.fetchall()
         conn.close()
-        log_file(2000, "Recupero dei log riuscito")
+        log_file(2100)
         return logs
     except Exception as e:
-        log_file(2003, f"Errore recuperando i log: {e}")
+        log_file(2400)
         return []
-    
 
 def get_sensor_by_pk(sensor_pk):
     """
@@ -217,6 +216,7 @@ def get_sensor_by_pk(sensor_pk):
     Returns:
         Sensore: An instance of Sensore with the sensor's data, or None if not found.
     """
+    log_file(2007, f"Evento completato su componente specifico: {sensor_pk}")
     try:
         conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
@@ -227,6 +227,7 @@ def get_sensor_by_pk(sensor_pk):
         conn.close()
 
         if data:
+            log_file(2100)
             sensor = o.Sensore(
                 SensorePk=data[0],
                 Id=data[1],
@@ -239,11 +240,11 @@ def get_sensor_by_pk(sensor_pk):
             )
             return sensor
         else:
+            log_file(2401)
             return None
     except Exception as e:
-        log_file(2003, f"Errore recuperando il sensore {sensor_pk}: {e}")
+        log_file(2400)
         return None
-    
 
 def add_stanza(nome_stanza):
     """
@@ -254,7 +255,7 @@ def add_stanza(nome_stanza):
     
     Retries if the database is locked and returns 1 on success and 0 on failure.
     """
-    log_file(2014, f"Aggiunta stanza con nome '{nome_stanza}'")
+    log_file(2008, f"Evento su componente specifico: {nome_stanza}")
     for attempt in range(MAX_RETRIES):
         try:
             conn = sqlite3.connect(f.get_db())
@@ -265,24 +266,23 @@ def add_stanza(nome_stanza):
 
             conn.commit()
             conn.close()
-            log_file(2015, f"'{nome_stanza}'")
+            log_file(2104, f"Evento aggiunta stanza: {nome_stanza}")
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2002, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
+                log_file(2000)
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2003, f"Errore aggiungendo la stanza: {e}")
+                log_file(2400)
                 return 0  # Failure
         except sqlite3.IntegrityError:
-            log_file(2010, f"Errore: Stanza con nome '{nome_stanza}' esiste già.")
+            log_file(2402)
             return 0  # Failure
         except Exception as e:
-            log_file(2003, f"Errore aggiungendo la stanza: {e}")
+            log_file(2400)
             return 0  # Failure
-    log_file(2001, "Fallimento nell'aggiunta della stanza dopo vari tentativi")
+    log_file(2400)
     return 0  # Failure after retries
-
 
 def get_sensori_by_stanza(stanza_nome):
     """
@@ -294,7 +294,7 @@ def get_sensori_by_stanza(stanza_nome):
     Returns:
         list: A list of tuples with all sensor data for the specified room.
     """
-    log_file(2016, f" {stanza_nome}")
+    log_file(2007, f"Evento completato su componente specifico: {stanza_nome}")
     try:
         conn = sqlite3.connect(f.get_db())
         c = conn.cursor()
@@ -303,8 +303,116 @@ def get_sensori_by_stanza(stanza_nome):
         sensori = c.fetchall()
 
         conn.close()
-        log_file(2000, f"Recupero dei sensori per la stanza '{stanza_nome}' riuscito")
+        log_file(2100)
         return sensori
     except Exception as e:
-        log_file(2003, f"Errore recuperando i sensori per la stanza '{stanza_nome}': {e}")
+        log_file(2400)
         return []
+    
+def aggiungi_forzatura(data):
+    """
+    Inserts a new entry into the FORZATURA table with the given date.
+
+    Args:
+        data (str): The date to insert.
+
+    Retries if the database is locked and returns 1 on success and 0 on failure.
+    """
+    log_file(2011, f": {data}")
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect(f.get_db())
+            c = conn.cursor()
+
+            # Insert new forzatura entry with date
+            c.execute('''INSERT INTO FORZATURA (Data) VALUES (?)''', (data,))
+            
+            conn.commit()
+            conn.close()
+            log_file(2109, f": {data}")
+            return 1  # Success
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                log_file(2000)
+                time.sleep(RETRY_DELAY)
+            else:
+                log_file(2401)
+                return 0  # Failure
+        except Exception as e:
+            log_file(2407)
+            return 0  # Failure
+    log_file(2400)
+    return 0  # Failure after retries
+
+
+def insert_activity(data_a):
+    """
+    Inserts a new entry into the ACTIVITY table with only the access date.
+
+    Args:
+        data_a (str): The access date to insert.
+
+    Retries if the database is locked and returns 1 on success and 0 on failure.
+    """
+    log_file(2012, f": {data_a}")
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect(f.get_db())
+            c = conn.cursor()
+
+            # Insert new activity entry with access date
+            c.execute('''INSERT INTO ACTIVITY (DataA) VALUES (?)''', (data_a,))
+            
+            conn.commit()
+            conn.close()
+            log_file(2110, f": {data_a}")
+            return 1  # Success
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                log_file(2000)
+                time.sleep(RETRY_DELAY)
+            else:
+                log_file(2401)
+                return 0  # Failure
+        except Exception as e:
+            log_file(2408)
+            return 0  # Failure
+    log_file(2400)
+    return 0  # Failure after retries
+
+
+def update_activity_shutdown(log_id, data_s):
+    """
+    Updates the shutdown date for the latest entry in the ACTIVITY table.
+
+    Args:
+        log_id (int): The LogId of the activity to update.
+        data_s (str): The shutdown date to insert.
+
+    Retries if the database is locked and returns 1 on success and 0 on failure.
+    """
+    log_file(2013, f": {data_s}")
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect(f.get_db())
+            c = conn.cursor()
+
+            # Update shutdown date for the latest activity entry
+            c.execute('''UPDATE ACTIVITY SET DataS = ? WHERE LogId = ?''', (data_s, log_id))
+            
+            conn.commit()
+            conn.close()
+            log_file(2111, f": {data_s}")
+            return 1  # Success
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                log_file(2000)
+                time.sleep(RETRY_DELAY)
+            else:
+                log_file(2400)
+                return 0  # Failure
+        except Exception as e:
+            log_file(2409)
+            return 0  # Failure
+    log_file(2400)
+    return 0  # Failure after retries

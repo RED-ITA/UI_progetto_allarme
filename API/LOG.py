@@ -73,7 +73,7 @@ def setup_logger():
     db_handler.setLevel(logging.DEBUG)
     db_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     db_handler.setFormatter(db_formatter)
-    db_handler.addFilter(CodiceFilter(set(range(2000, 2501))))  # Codes from 2000 to 2500 inclusive
+    db_handler.addFilter(CodiceFilter(set(range(2000, 3001))))  # Codes from 2000 to 2500 inclusive
 
     # Console handler for colored output
     console_handler = logging.StreamHandler()
@@ -106,55 +106,94 @@ logger = setup_logger()
 
 # Dictionary mapping codes to log levels and messages
 log_messages = {
-    # Codici generali
+    # UI messages
+
+    # SUCCESS
     0: ('SUCCESS', 'Avvio:'),
-    100: ('INFO', 'Inizializzazione dell\'interfaccia utente'),
-    110: ('INFO', 'Inizializzazione dei sensori'),
-    120: ('INFO', 'Tentativo di eliminazione del sensore'),
-    130: ('INFO', 'Apertura della schermata parametri per il sensore'),
-    140: ('INFO', 'Aggiornamento dell\'interfaccia utente'),
-    150: ('INFO', 'Popolamento delle aree di scorrimento con i widget dei sensori'),
-    160: ('INFO', 'Costruzione dell\'interfaccia utente'),
-    170: ('INFO', 'Creazione delle aree di scorrimento per sensori attivi e inattivi'),
-    180: ('DEBUG', 'Svuotamento del layout'),
-    190: ('INFO', 'Impostazione del colore di sfondo'),
-    200: ('INFO', 'Caricamento del file di stile'),
-    210: ('INFO', 'Pulsante "Aggiungi Sensore" cliccato'),
-    220: ('INFO', 'Sensore cliccato per modifica'),
-    300: ('INFO', 'Inizializzazione dell\'interfaccia Stanze_Page'),
-    310: ('INFO', 'Popolamento della scroll area con le stanze disponibili'),
-    320: ('INFO', 'Stanza selezionata'),
-    330: ('INFO', 'Popolamento della scroll area con i sensori per la stanza selezionata'),
-    340: ('INFO', 'Sensore selezionato'),
-    350: ('DEBUG', 'Svuotamento del layout'),
-    360: ('INFO', 'Impostazione del colore di sfondo'),
-    370: ('INFO', 'Caricamento del file di stile'),
-    380: ('INFO', 'Pulsante "Aggiungi Stanza" cliccato'),
-    390: ('INFO', 'Aggiunta nuova stanza'),
-    391: ('INFO', 'Stanza aggiunta con successo'),
-    392: ('ERROR', 'Errore nell\'aggiunta della stanza'),
-    400: ('INFO', 'Interfaccia aggiornata con l\'ora corrente e le stanze disponibili.'),
+    # INFO
+    1: ('INFO', 'Inizializzazione dell\'interfaccia utente: '),
+    2: ('INFO', 'Aggiornamento dell\'interfaccia utente: '),
+    3: ('INFO', 'Costruzione dell\'interfaccia utente: '),
+    4: ('INFO', 'Impostazione del colore di sfondo: '),
+    5: ('INFO', 'Caricamento del file di stile: '),
+    # WARNING
     404: ('WARNING', 'Errore sconosciuto'),
-    999: ('DEBUG', 'Sviluppo'),
     
-    # Database operation codes
-    2000: ('SUCCESS', 'Operazione sul database riuscita'),
-    2001: ('ERROR', 'Operazione sul database fallita'),
-    2002: ('INFO', 'Database bloccato, riprovo'),
-    2003: ('ERROR', 'Errore del database'),
-    2004: ('INFO', 'Aggiunta sensore al database'),
-    2005: ('SUCCESS', 'Sensore aggiunto con successo'),
-    2006: ('INFO', 'Modifica sensore nel database'),
-    2007: ('SUCCESS', 'Sensore modificato con successo'),
-    2008: ('INFO', 'Eliminazione sensore dal database'),
-    2009: ('SUCCESS', 'Sensore eliminato con successo'),
-    2010: ('ERROR', 'Sensore con questo ID esiste già'),
-    2011: ('INFO', 'Recupero di tutte le stanze dal database'),
-    2012: ('INFO', 'Recupero di tutti i sensori dal database'),
-    2013: ('INFO', 'Recupero di tutti i log dal database'),
-    2015: ('SUCCESS', 'aggiunta con successo:'),
-    2016: ('INFO', 'Recupero di tutti i sensori per la stanza:'),
-    # ... aggiungi altri codici se necessario
+    #sensori page
+    100: ('INFO', 'Tentativo di eliminazione del sensore'),
+    101: ('INFO', 'Apertura della schermata parametri per il sensore'),
+    102: ('INFO', 'Popolamento delle aree di scorrimento con i widget dei sensori'),
+    103: ('INFO', 'Creazione delle aree di scorrimento per sensori attivi e inattivi'),
+    104: ('INFO', 'Pulsante "Aggiungi Sensore" cliccato'),
+    105: ('INFO', 'Sensore cliccato per modifica'),
+    106: ('INFO', 'Sensore selezionato'),
+    107: ('INFO', 'Finita aggiunta o modifica sensore'),
+    # ERROR
+    401: ('ERROR', 'Errore nell\'aggiunta del sensore'),
+    
+    #stanza page
+    200: ('INFO', 'Popolamento della scroll area con le stanze disponibili'),
+    201: ('INFO', 'Stanza selezionata'),
+    202: ('INFO', 'Popolamento della scroll area con i sensori per la stanza selezionata'),
+    203: ('INFO', 'Pulsante "Aggiungi Stanza" cliccato'),
+    204: ('INFO', 'Aggiunta nuova stanza'),
+    # ERROR
+    402: ('ERROR', 'Errore nell\'aggiunta della stanza'),
+    
+    #tastierino
+    300: ('INFO', 'Codice Corretto'),
+    301: ('INFO', 'Codice Errato'),
+    # CRITICAL
+    403: ('CRITICAL', 'Tentativo di forzatura'),
+
+
+    #home_page
+    500: ('INFO', 'apertura richiesta: '),
+    501: ('INFO', 'resize'),
+    502: ('INFO', 'icon resize'),
+
+    # DB messages
+    # INFO
+    2000: ('INFO', 'Database bloccato, riprovo'),
+    2001: ('INFO', 'Aggiunta sensore al database'),
+    2002: ('INFO', 'Modifica sensore nel database'),
+    2003: ('INFO', 'Eliminazione sensore dal database'),
+    2004: ('INFO', 'Recupero di tutte le stanze dal database'),
+    2005: ('INFO', 'Recupero di tutti i sensori dal database'),
+    2006: ('INFO', 'Recupero di tutti i log dal database'),
+    2007: ('INFO', 'Recupero di tutti i sensori per la stanza:'),
+    2008: ('INFO', 'Accensione Allarme'),
+    2009: ('INFO', 'Spegnimento Allarme'),
+    # CRITICAL
+    # SUCCESS
+    2100: ('SUCCESS', 'Operazione sul database riuscita'),
+    2101: ('SUCCESS', 'Sensore aggiunto con successo'),
+    2102: ('SUCCESS', 'Sensore modificato con successo'),
+    2103: ('SUCCESS', 'Sensore eliminato con successo'),
+    2104: ('SUCCESS', 'aggiunta con successo:'),
+    2105: ('SUCCESS', 'Accensione Allarme, risucito'),
+    2106: ('SUCCESS', 'Accensione Allarme, salvata data in ACTIVITY'),
+    2107: ('SUCCESS', 'Spegnimento Allarme, risucito'),
+    2108: ('SUCCESS', 'Spegnimento Allarme, salvata data in ACTIVITY'),
+    2109: ('SUCCESS', 'Tentativo di forzatura salvato'),
+    # ERROR
+    2400: ('ERROR', 'Operazione sul database fallita'),
+    2401: ('ERROR', 'Errore del database'),
+    2402: ('ERROR', 'Sensore con questo ID esiste già'),
+    2403: ('ERROR', 'Accensione Allarme FALLITO'),
+    2404: ('ERROR', 'Accensione Allarme, salvata data in ACTIVITY FALLITO'),
+    2405: ('ERROR', 'Spegnimento Allarme FALLITO'),
+    2406: ('ERROR', 'Spegnimento Allarme, salvata data in ACTIVITY FALLITO'),
+    # WARNING
+
+    # THREAD messages
+    # INFO
+    1000: ('INFO', ''),
+    1500: ('INFO', ''),
+    # CRITICAL
+    # SUCCESS
+    # ERROR
+    # WARNING
 }
 
 # Function to log messages based on code and optional suffix

@@ -36,7 +36,8 @@ class Sensori_Page(QWidget):
         self.set_background_color()
 
     def init_ui(self):
-        log_file(100)
+        log_file(1, "sensori")
+
         # Imposta le dimensioni della finestra
         screen_geometry = QApplication.primaryScreen().geometry()
         self.screen_width = screen_geometry.width()
@@ -53,7 +54,7 @@ class Sensori_Page(QWidget):
         self.set_background_color()
 
     def init_sensors(self):
-        log_file(110)
+        log_file(2005)
         # Recupera tutti i sensori dal database
         sensors_data = db_api.get_all_sensori()
         self.lista_sensori = []
@@ -73,7 +74,7 @@ class Sensori_Page(QWidget):
             self.lista_sensori.append(sensor)
 
     def build_ui(self):
-        log_file(160)
+        log_file(3, "sensori")
         # Crea il widget centrale e il layout principale
         self.central_widget = QWidget()
         self.central_widget.setContentsMargins(0, 0, 0, 0)
@@ -105,7 +106,7 @@ class Sensori_Page(QWidget):
         self.populate_scroll_areas()
 
     def create_scroll_areas(self):
-        log_file(170)
+        log_file(103)
         # Scroll area per sensori attivi
         self.area_active = QScrollArea()
         self.area_active.setFixedHeight(300)
@@ -151,7 +152,7 @@ class Sensori_Page(QWidget):
         self.main_layout.addStretch()
 
     def populate_scroll_areas(self):
-        log_file(150)
+        log_file(102)
         # Svuota le layout prima di popolarle
         self.clear_layout(self.h_layout_active)
         self.clear_layout(self.h_layout_inactive)
@@ -174,41 +175,41 @@ class Sensori_Page(QWidget):
         self.h_layout_inactive.addStretch()
 
     def clear_layout(self, layout):
-        log_file(180)
+        log_file(2, "sensori")
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
     def refresh_ui(self):
-        log_file(140)
+        log_file(2, "sensori")
         # Ripopola le scroll area con i sensori aggiornati
         self.populate_scroll_areas()
 
     def elimina_sensore(self, sensor_pk):
-        log_file(120, f"Tentativo di eliminazione del sensore con SensorPk {sensor_pk}")
+        log_file(100, f" {sensor_pk}")
         # Aggiorna lo stato del sensore nel database
         result = db_api.delete_sensor(sensor_pk)
         if result:
-            log_file(2009, f"Sensore {sensor_pk} eliminato con successo.")
+            log_file(2103)
         else:
-            log_file(2001, f"Errore nell'eliminazione del sensore {sensor_pk}.")
+            log_file(2400)
         # Aggiorna la lista dei sensori
         self.init_sensors()
         self.refresh_ui()
 
     def on_add_sensor_clicked(self):
-        log_file(210)
+        log_file(104)
         # Emette un segnale per informare il MainWindows di cambiare pagina
         self.signal_add_sensor.emit()
 
     def on_sensor_clicked(self, sensor_pk):
-        log_file(220, f"Sensor widget con SensorPk {sensor_pk} cliccato")
+        log_file(105, f"SensorPk: {sensor_pk}")
         # Emette un segnale per informare il MainWindows di aprire la pagina di modifica del sensore
         self.signal_edit_sensor.emit(sensor_pk)
 
     def set_background_color(self):
-        log_file(190)
+        log_file(4, "sensori")
         # Imposta il colore di sfondo
         palette = self.palette()
         palette.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
@@ -216,7 +217,7 @@ class Sensori_Page(QWidget):
         self.load_stylesheet()
 
     def load_stylesheet(self):
-        log_file(200)
+        log_file(5, "sensori")
         # Carica il file di stile
         file = QFile(f.get_style("sensori.qss"))
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):

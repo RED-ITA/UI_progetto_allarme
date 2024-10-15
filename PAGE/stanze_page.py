@@ -33,7 +33,7 @@ class Stanze_Page(QWidget):
         self.set_background_color()
 
     def initUI(self):
-        log_file(300)  # Inizializzazione dell'interfaccia Stanze_Page
+        log_file(1, "stanze")
 
         # Scroll area a sinistra con le stanze disponibili
         self.area_stanze = QScrollArea()
@@ -61,7 +61,7 @@ class Stanze_Page(QWidget):
         self.main_layout.addWidget(self.area_sensori)
 
     def populate_stanze(self):
-        log_file(310)  # Popolamento della scroll area con le stanze disponibili
+        log_file(200, "stanze")
         self.clear_layout(self.v_layout_stanze)
 
         # Pulsante per aggiungere una nuova stanza
@@ -71,67 +71,56 @@ class Stanze_Page(QWidget):
         self.v_layout_stanze.addWidget(self.add_stanza_button)
         self.v_layout_stanze.addSpacing(50)
 
-        self.buttons = {}  # Dizionario per tenere traccia dei pulsanti
+        self.buttons = {}
 
         stanze_data = db_api.get_all_stanze()
         for stanza in stanze_data:
-            # Crea il pulsante della stanza
             button = QPushButton(stanza[0])
             button.setObjectName("stanza_button")
-            button.setStyleSheet("text-align: left;")  # Allinea il testo e l'immagine a sinistra
+            button.setStyleSheet("text-align: left;")
 
-            # Imposta l'icona del pulsante
-            pixmap = QPixmap(f.get_img("stanza_nosel"))  # Percorso dell'immagine non selezionata
-            icon = QIcon(pixmap)  # Crea un QIcon a partire da QPixmap
-            button.setIcon(icon)  # Usa l'icona per il pulsante
+            pixmap = QPixmap(f.get_img("stanza_nosel"))
+            icon = QIcon(pixmap)
+            button.setIcon(icon)
 
-            # Connetti il pulsante alla funzione di click
             button.clicked.connect(lambda checked, nome=stanza[0]: self.on_stanza_clicked(nome))
             self.v_layout_stanze.addWidget(button)
-            self.buttons[stanza[0]] = button  # Salva il pulsante per riferimento
+            self.buttons[stanza[0]] = button
         self.v_layout_stanze.addStretch()
 
-        
-
     def on_stanza_clicked(self, stanza_nome):
-        log_file(320, f" {stanza_nome}")
+        log_file(201, f"{stanza_nome}")
 
-        # Rimuovi il flag 'selected' da tutti i pulsanti delle stanze e aggiorna l'icona
         for nome, button in self.buttons.items():
             button.setProperty("selected", False)
             button.style().unpolish(button)
             button.style().polish(button)
 
-            # Cambia l'icona in quella normale
-            pixmap = QPixmap(f.get_img("stanza_nosel"))  # Percorso dell'immagine normale
-            icon = QIcon(pixmap)  # Crea un QIcon a partire da QPixmap
+            pixmap = QPixmap(f.get_img("stanza_nosel"))
+            icon = QIcon(pixmap)
             button.setIcon(icon)
 
-        # Imposta il flag 'selected' sul pulsante della stanza cliccata
         sender = self.buttons[stanza_nome]
         sender.setProperty("selected", True)
         sender.style().unpolish(sender)
         sender.style().polish(sender)
 
-        # Cambia l'icona in quella selezionata
-        selected_pixmap = QPixmap(f.get_img("stanza_sel"))  # Percorso dell'immagine selezionata
-        selected_icon = QIcon(selected_pixmap)  # Crea un QIcon a partire da QPixmap
+        selected_pixmap = QPixmap(f.get_img("stanza_sel"))
+        selected_icon = QIcon(selected_pixmap)
         sender.setIcon(selected_icon)
 
         self.populate_sensori(stanza_nome)
 
     def populate_sensori(self, stanza_nome):
-        log_file(330, f"{stanza_nome}")
+        log_file(202, f"{stanza_nome}")
         self.clear_layout(self.h_layout_sensori)
-        sensori_stanza = db_api.get_sensori_by_stanza(stanza_nome)  # Recupera solo i sensori della stanza selezionata
+        sensori_stanza = db_api.get_sensori_by_stanza(stanza_nome)
 
-        # Creare layout per le righe di sensori
         riga_superiore_layout = QHBoxLayout()
         riga_inferiore_layout = QHBoxLayout()
         self.h_layout_sensori.addLayout(riga_superiore_layout)
         self.h_layout_sensori.addLayout(riga_inferiore_layout)
 
-        # Popolare i layout delle righe
         for index, sensor_data in enumerate(sensori_stanza):
             riga_layout = riga_superiore_layout if index % 2 == 0 else riga_inferiore_layout
             sensore = o.Sensore(
@@ -149,16 +138,15 @@ class Stanze_Page(QWidget):
             sensore_widget.signal_parametri.connect(self.on_sensor_clicked)
             riga_layout.addWidget(sensore_widget)
 
-        # Aggiungere spazi elastici alla fine di ciascuna riga
         riga_superiore_layout.addStretch()
         riga_inferiore_layout.addStretch()
 
     def on_sensor_clicked(self, sensor_pk):
-        log_file(340, f" {sensor_pk}")
+        log_file(203, f"{sensor_pk}")
         self.signal_sensor_clicked.emit(sensor_pk)
 
     def on_add_stanza_clicked(self):
-        log_file(380)  # Pulsante 'Aggiungi Stanza' cliccato
+        log_file(203, "Pulsante 'Aggiungi Stanza' cliccato")
         self.create_new_stanza()
 
     def create_new_stanza(self):
@@ -166,12 +154,10 @@ class Stanze_Page(QWidget):
         dialog.setWindowTitle("Crea Nuova Stanza")
         dialog_layout = QVBoxLayout()
 
-        # Campo per inserire il nome della stanza
         self.nome_stanza_input = QLineEdit()
         self.nome_stanza_input.setPlaceholderText("Nome della nuova stanza")
         dialog_layout.addWidget(self.nome_stanza_input)
 
-        # Pulsanti OK e Cancel
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(lambda: self.on_confirm_add_stanza(dialog))
         buttons.rejected.connect(dialog.reject)
@@ -183,17 +169,17 @@ class Stanze_Page(QWidget):
     def on_confirm_add_stanza(self, dialog):
         nome_stanza = self.nome_stanza_input.text().strip()
         if nome_stanza:
-            log_file(390, f" {nome_stanza}")
+            log_file(204, f"{nome_stanza}")
             result = db_api.add_stanza(nome_stanza)
             if result:
-                log_file(391, f" '{nome_stanza}' ")
+                log_file(2104, f"{nome_stanza}")
                 self.populate_stanze()
             else:
-                log_file(392, f" '{nome_stanza}'.")
+                log_file(402, f"{nome_stanza}")
         dialog.accept()
 
     def clear_layout(self, layout):
-        log_file(350)  # Svuotamento del layout
+        log_file(2, "stanze")
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
@@ -202,15 +188,14 @@ class Stanze_Page(QWidget):
                 self.clear_layout(child.layout())
 
     def set_background_color(self):
-        log_file(360)  # Impostazione del colore di sfondo
+        log_file(4, "stanze")
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
         self.setPalette(p)
-        # Carica lo stylesheet
         self.load_stylesheet()
 
     def load_stylesheet(self):
-        log_file(370)  # Caricamento del file di stile
+        log_file(5, "stanze")
         file = QFile(f.get_style("stanze.qss"))
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
             stream = QTextStream(file)

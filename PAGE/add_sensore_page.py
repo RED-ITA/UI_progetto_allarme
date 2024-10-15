@@ -18,6 +18,8 @@ class SensorFormPage(QWidget):
         self.init_ui()
         self.load_stylesheet()
         #self.reload_stanze()  # Ricarica le stanze disponibili durante l'inizializzazione
+        
+        log_file(1, "sensor_form")
 
     def init_ui(self):
         self.main_layout = QVBoxLayout()
@@ -33,7 +35,6 @@ class SensorFormPage(QWidget):
         self.data_field = QLabel()
         self.data_field.setObjectName("dataField")
         self.data_field.setText(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
-        print(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
         # Layout per la sezione delle stanze
         stanza_layout = QHBoxLayout()
         self.stanza_field = QComboBox()
@@ -92,7 +93,7 @@ class SensorFormPage(QWidget):
         self.setLayout(self.main_layout)
 
     def load_stylesheet(self):
-        log_file(200)
+        log_file(5, "sensor_form")
         # Carica il file di stile
         file = QFile(f.get_style("add_sensore.qss"))
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
@@ -102,6 +103,7 @@ class SensorFormPage(QWidget):
             self.setStyleSheet(style_sheet)
 
     def on_save_clicked(self):
+        log_file(107)
         # Raccogli i dati e emetti il segnale
         sensor_data = {
             "Id": self.id_field.text(),
@@ -113,24 +115,23 @@ class SensorFormPage(QWidget):
         self.signal_save_sensor.emit(sensor_data)
 
     def on_cancel_clicked(self):
+        log_file(2, "sensor_form")
         self.signal_back.emit()
 
     def on_add_stanza_clicked(self):
-        # Finestra di dialogo per prendere il nome della nuova stanza
         nome_stanza, ok = QInputDialog.getText(self, "Aggiungi Stanza", "Inserisci il nome della nuova stanza:")
         if ok and nome_stanza:
-            # Aggiungi la stanza al database
             if db.add_stanza(nome_stanza):
-                log_file(391, f"'{nome_stanza}")
+                log_file(2104, f"{nome_stanza}")
                 self.reload_stanze()
             else:
-                log_file(392, f" '{nome_stanza}'.")
+                log_file(402, f"{nome_stanza}")
 
     def on_soglia_slider_changed(self, value):
-        # Aggiorna l'etichetta del valore della soglia quando lo slider viene spostato
         self.soglia_value_label.setText(str(value))
 
     def load_sensor_data(self, sensor):
+        log_file(3, "sensor_form_load_data")
         # Carica i dati del sensore nei campi del form per modifica
         self.id_field.setText(str(sensor.Id))
         self.tipo_field.setCurrentIndex(sensor.Tipo)
@@ -139,6 +140,7 @@ class SensorFormPage(QWidget):
         self.soglia_slider.setValue(sensor.Soglia)
 
     def reload_stanze(self):
+        log_file(200)
         # Ricarica le stanze dal database e aggiorna la combobox
         self.stanze_disponibili = db.get_all_stanze()
         self.stanza_field.clear()
@@ -148,17 +150,12 @@ class SensorFormPage(QWidget):
             self.stanza_field.addItem("Nessuna stanza disponibile")
 
     def update_ui(self):
-        """
-        Aggiorna l'interfaccia grafica con gli ultimi valori delle stanze e l'ora corrente.
-        """
+        log_file(2, "sensor_form_update_ui")
         # Aggiorna la data e l'ora
         current_time = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
         self.data_field.setText(current_time)
         
         # Ricarica le stanze disponibili
         self.reload_stanze()
-
-        # Log dell'aggiornamento
-        log_file(400)
 
         print(self.stanza_field.itemText(0))

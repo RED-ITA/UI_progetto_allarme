@@ -6,7 +6,7 @@ import sys
 
 from API import funzioni as f
 from CMP import QPushButtonBadge as q
-
+from API.LOG import log_file
 
 class Home_Page(QWidget):
 
@@ -16,12 +16,14 @@ class Home_Page(QWidget):
         self.master = master
         self.master.setWindowTitle("HomePage")
         
-    
         self.header = header
         self.initUI()
 
         self.setAutoFillBackground(True)
         self.set_background_color()
+
+        # Log initialization
+        log_file(1, "home_page")
 
     def initUI(self):
         # Initialize the UI elements
@@ -37,10 +39,11 @@ class Home_Page(QWidget):
         self.layout1.update()
         self.layout1.activate()
 
+        # Log UI setup completion
+        log_file(3, "home_page")
 
     def add_buttons_to_layout(self):
         size_ico = int(self.get_icon_size() / 2)
-
 
         self.h1.addSpacing(int(self.master.width() * 0.2))
 
@@ -88,27 +91,33 @@ class Home_Page(QWidget):
 
         self.h2.addSpacing(int(self.master.width() * 0.2))
 
-        
         self.layout1.addLayout(self.h1)
         self.layout1.addLayout(self.h2)
 
+        # Log buttons layout addition
+        log_file(3, "home_page_buttons_added")
 
     def get_icon_size(self):
         # Calculate icon size based on application window width
-        return int((self.master.width() * 0.1) )
+        return int((self.master.width() * 0.1))
 
     def resizeEvent(self, event):
         # Update icon size when application window size changes
         self.update_icon_size()
         super().resizeEvent(event)
 
+        # Log resize event
+        log_file(501, f": new_size={self.master.size()}")
+
     def update_icon_size(self):
-       
         size_ico = int(self.get_icon_size())
         for button in [self.warning_button, self.settings_button, self.sensors_button, 
                        self.rooms_button, self.activate_button, self.deactivate_button, 
                        self.detections_button]:
             button.setFixedSize(size_ico, size_ico)
+
+        # Log icon size update
+        log_file(502, f": new_size={size_ico}")
 
     def set_background_color(self):
         p = self.palette()
@@ -116,6 +125,9 @@ class Home_Page(QWidget):
         self.setPalette(p)
         # Load the stylesheet
         self.load_stylesheet()
+
+        # Log background color setting
+        log_file(4, "home_page_background_set")
 
     def load_stylesheet(self):
         file = QFile(f.get_style("home.qss"))
@@ -125,40 +137,48 @@ class Home_Page(QWidget):
             file.close()
             self.setStyleSheet(style_sheet)
 
+        # Log stylesheet loading
+        log_file(5, "home_page_stylesheet_loaded")
+
     def warning(self):
+        log_file(500, "home_page_warning")
         print("anomalie")
 
-    #def features(self):
-    #    print("magic")
-        
     def impostazioni(self):
+        log_file(500, "home_page_settings")
         print("impostazioni")
         self.header.set_tipo(1)
         self.master.change_page(1)
         
     def sensori(self):
+        log_file(500, "home_page_sensors")
         print("sensori")
         self.header.set_tipo(2)
         self.master.change_page(2)
 
     def stanze(self):
+        log_file(500, "home_page_rooms")
         print("stanze")
         self.header.set_tipo(3)
         self.master.change_page(3)
         
     def attiva(self):
+        log_file(500, "home_page_activate")
         print("attiva")
         self.activate_button.setVisible(False)
         self.deactivate_button.setVisible(True)
 
     def disattiva(self):
+        log_file(500, "home_page_deactivate_attempt")
         print("disattiva-tentativo")
         self.master.tastierino_form_page.reset_ui()
         self.master.change_page(5)
 
     def disattiva_passato(self):
+        log_file(500, "home_page_deactivate_pass")
         self.deactivate_button.setVisible(False)
         self.activate_button.setVisible(True)
         
     def rilevamenti(self):
+        log_file(500, "home_page_detections")
         print("rilevamenti")

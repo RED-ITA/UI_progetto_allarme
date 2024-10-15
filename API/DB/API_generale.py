@@ -54,6 +54,18 @@ def create_db():
                             FOREIGN KEY (SensorId) REFERENCES SENSORI(Id)
                         )''')
             
+            c.execute('''CREATE TABLE IF NOT EXISTS ACTIVITY (
+                            LogId INTEGER PRIMARY KEY AUTOINCREMENT,  
+                            DataA TEXT,
+                            DataS TEXT
+                        )''')
+            
+            c.execute('''CREATE TABLE IF NOT EXISTS FORZATURA (
+                            LogId INTEGER PRIMARY KEY AUTOINCREMENT,  
+                            Data TEXT
+                        )''')
+
+            
             # Create the STANZE table
             c.execute('''CREATE TABLE IF NOT EXISTS STANZE (
                             Nome TEXT PRIMARY KEY

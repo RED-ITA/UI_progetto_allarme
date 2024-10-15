@@ -5,6 +5,7 @@ from PyQt6.QtGui import QColor, QFont, QPainter, QIcon
 import sys
 
 from API import funzioni as f
+from API.LOG import log_file
 from CMP import (
     QPushButtonBadge as q,
     QTastierino as qn,
@@ -31,11 +32,13 @@ class Tastierino(QWidget):
         self.setAutoFillBackground(True)
         self.set_background_color()
 
+        # Log interface initialization
+        log_file(1, "tastierino")
+
     def initUI(self):
         # Label to show the number entered
         self.pin_display = qd.CirclePinDisplay(num_digits=6)
         self.main_layout.addWidget(self.pin_display)
-
 
         # Widget containing the grid layout for buttons
         wid = QWidget()
@@ -65,14 +68,30 @@ class Tastierino(QWidget):
         self.main_layout.addLayout(h)
         self.main_layout.addStretch()
 
-    def button_pressed(self, number):
-        
+        # Log grid layout initialization
+        log_file(3, "tastierino")
 
-        if len(self.current_value) < 6:  # Limite di 6 cifre
+    def button_pressed(self, number):
+        log_file(301)
+
+        if len(self.current_value) < 6:
             if number == "x":
-                self.current_value = ""   
+                self.current_value = ""
+                log_file(405)
             elif number == "v":
-                pass
+                log_file(301)
+                if self.current_value == "123457":
+                    log_file(300)
+                    self.master.tastierino_pass()
+                else:
+                    self.cont_error += 1
+                    log_file(301)
+                    self.current_value = ""
+                    if self.cont_error > 2:
+                        log_file(403)
+                        self.master.tastierino_err()
+                    else:
+                        self.message_error()
             elif len(self.current_value) == 0:
                 self.current_value = number
             else:
@@ -80,35 +99,22 @@ class Tastierino(QWidget):
             self.pin_display.update_display(self.current_value)
 
             if len(self.current_value) == 6:
-                print("disabilitazione")
+                log_file(301)
                 for but in self.buttons.values():
                     testo = but.text()
-                    print(testo)
                     if testo != "":
                         but.setEnabled(False)
         else:
             if number == "x":
                 self.current_value = ""
+                log_file(405)
                 for but in self.buttons.values():
                     testo = but.text()
-                    print(testo)
                     if testo != "":
                         but.setEnabled(True)
-            elif number == "v":
-                if self.current_value == "123457":
-                    self.master.tastierino_pass()
-                else:
-                    self.cont_error += 1
-                    print("conta")
-                    self.current_value = ""
-                    if self.cont_error > 2:  
-                        self.master.tastierino_err()
-                    else:
-                        self.message_error()
-                    
-                    
 
     def message_error(self):
+        log_file(404)
         ico = QIcon(f.get_img("bell_orange.png"))
         titolo = f"Errore {self.cont_error}"
         desc = f"{3 - self.cont_error} tentativi rimasti"
@@ -130,6 +136,7 @@ class Tastierino(QWidget):
         errore.exec()
 
     def handle_messagebox_click(self, button):
+        log_file(405)
         # Riabilita i pulsanti dopo la chiusura del QMessageBox
         for button in self.buttons.values():
             button.setEnabled(True)
@@ -138,8 +145,8 @@ class Tastierino(QWidget):
         self.current_value = ""
         self.pin_display.update_display(self.current_value)
 
-        
     def set_background_color(self):
+        log_file(4, "tastierino")
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
         self.setPalette(p)
@@ -147,6 +154,7 @@ class Tastierino(QWidget):
         self.load_stylesheet()
 
     def reset_ui(self):
+        log_file(2, "tastierino")
         # Reset il valore corrente
         self.current_value = ""
         self.cont_error = 0
@@ -158,6 +166,7 @@ class Tastierino(QWidget):
             button.setEnabled(True)
 
     def load_stylesheet(self):
+        log_file(5, "tastierino")
         file = QFile(f.get_style("tastierino.qss"))
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
             stream = QTextStream(file)
