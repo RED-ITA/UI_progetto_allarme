@@ -38,16 +38,16 @@ def add_sensor(sensor_data):
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2000)
+                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2400)
+                log_file(2400, e)
                 return 0  # Failure
         except sqlite3.IntegrityError:
-            log_file(2402)
+            log_file(2402, e)
             return 0  # Failure
         except Exception as e:
-            log_file(2400)
+            log_file(2401, e)
             return 0  # Failure
     log_file(2400)
     return 0  # Failure after retries
@@ -83,15 +83,15 @@ def edit_sensor(sensor_id, new_data):
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2000)
+                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2400)
+                log_file(2401, e)
                 return 0  # Failure
         except Exception as e:
-            log_file(2400)
+            log_file(2401, e)
             return 0  # Failure
-    log_file(2400)
+    log_file(2400, e)
     return 0  # Failure after retries
 
 def delete_sensor(sensor_pk):
@@ -125,15 +125,15 @@ def delete_sensor(sensor_pk):
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2000)
+                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2400)
+                log_file(2401, e)
                 return 0  # Failure
         except Exception as e:
-            log_file(2400)
+            log_file(2401, e)
             return 0  # Failure
-    log_file(2400)
+    log_file(2400, e)
     return 0  # Failure after retries
 
 def get_all_stanze():
@@ -152,10 +152,10 @@ def get_all_stanze():
         stanze = c.fetchall()
 
         conn.close()
-        log_file(2100)
+        log_file(2100, e)
         return stanze
     except Exception as e:
-        log_file(2400)
+        log_file(2401, e)
         return []
 
 def get_all_sensori():
@@ -177,7 +177,7 @@ def get_all_sensori():
         log_file(2100)
         return sensori
     except Exception as e:
-        log_file(2400)
+        log_file(2400, e)
         return []
 
 def get_all_logs():
@@ -203,7 +203,7 @@ def get_all_logs():
         log_file(2100)
         return logs
     except Exception as e:
-        log_file(2400)
+        log_file(2400, e)
         return []
 
 def get_sensor_by_pk(sensor_pk):
@@ -243,7 +243,7 @@ def get_sensor_by_pk(sensor_pk):
             log_file(2401)
             return None
     except Exception as e:
-        log_file(2400)
+        log_file(2400, e)
         return None
 
 def add_stanza(nome_stanza):
@@ -270,16 +270,16 @@ def add_stanza(nome_stanza):
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2000)
+                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2400)
+                log_file(2401, e)
                 return 0  # Failure
         except sqlite3.IntegrityError:
-            log_file(2402)
+            log_file(2402, e)
             return 0  # Failure
         except Exception as e:
-            log_file(2400)
+            log_file(2400, e)
             return 0  # Failure
     log_file(2400)
     return 0  # Failure after retries
@@ -295,19 +295,30 @@ def get_sensori_by_stanza(stanza_nome):
         list: A list of tuples with all sensor data for the specified room.
     """
     log_file(2007, f"Evento completato su componente specifico: {stanza_nome}")
-    try:
-        conn = sqlite3.connect(f.get_db())
-        c = conn.cursor()
+    for attempt in range(MAX_RETRIES):
+        try:
+            conn = sqlite3.connect(f.get_db())
+            c = conn.cursor()
 
-        c.execute('SELECT * FROM SENSORI WHERE Stanza = ? AND Stato = 1', (stanza_nome,))
-        sensori = c.fetchall()
+            c.execute('SELECT * FROM SENSORI WHERE Stanza = ? AND Stato = 1', (stanza_nome,))
+            sensori = c.fetchall()
 
-        conn.close()
-        log_file(2100)
-        return sensori
-    except Exception as e:
-        log_file(2400)
-        return []
+            conn.close()
+            log_file(2100)
+            return sensori
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
+                time.sleep(RETRY_DELAY)
+            else:
+                log_file(2400, e)
+                return []
+        except Exception as e:
+            log_file(2407, e)
+            return []  # Failure
+    log_file(2400)
+    return []  # Failure after retries
+            
     
 def aggiungi_forzatura(data):
     """
@@ -333,13 +344,13 @@ def aggiungi_forzatura(data):
             return 1  # Success
         except sqlite3.OperationalError as e:
             if 'database is locked' in str(e):
-                log_file(2000)
+                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2401)
+                log_file(2401, e)
                 return 0  # Failure
         except Exception as e:
-            log_file(2407)
+            log_file(2407, e)
             return 0  # Failure
     log_file(2400)
     return 0  # Failure after retries
@@ -372,12 +383,12 @@ def insert_activity(data_a):
                 log_file(2000)
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2401)
+                log_file(2401, e)
                 return 0  # Failure
         except Exception as e:
-            log_file(2408)
+            log_file(2408, e)
             return 0  # Failure
-    log_file(2400)
+    log_file(2400, e)
     return 0  # Failure after retries
 
 
@@ -409,10 +420,10 @@ def update_activity_shutdown(log_id, data_s):
                 log_file(2000)
                 time.sleep(RETRY_DELAY)
             else:
-                log_file(2400)
+                log_file(2400, e)
                 return 0  # Failure
         except Exception as e:
-            log_file(2409)
+            log_file(2409, e)
             return 0  # Failure
     log_file(2400)
     return 0  # Failure after retries
