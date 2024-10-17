@@ -12,11 +12,11 @@ Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\venv
  |==================================================================================================|
  |                               Counting Lines 	                                                |
  |API\DB\API_bg.py                                                                 |	          0 |
- |API\DB\API_generale.py                                                           |	         67 |
- |API\DB\API_ui.py                                                                 |	        259 |
+ |API\DB\API_generale.py                                                           |	         76 |
+ |API\DB\API_ui.py                                                                 |	        353 |
  |API\funzioni.py                                                                  |	         42 |
  |API\impo_bin.py                                                                  |	         51 |
- |API\LOG.py                                                                       |	        162 |
+ |API\LOG.py                                                                       |	        194 |
  |API\modbus.py                                                                    |	       3383 |
  |API\modbus_generico.py                                                           |	        368 |
  |API\modbus_strutture.py                                                          |	         26 |
@@ -30,12 +30,13 @@ Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\venv
  |main.py                                                                          |	        162 |
  |main_test.py                                                                     |	        166 |
  |OBJ\OBJ_UI_Sensore.py                                                            |	         44 |
- |PAGE\add_sensore_page.py                                                         |	        139 |
- |PAGE\home_page.py                                                                |	        119 |
+ |PAGE\add_sensore_page.py                                                         |	        136 |
+ |PAGE\home_page.py                                                                |	        140 |
  |PAGE\impostazioni_page.py                                                        |	         32 |
+ |PAGE\rilevamenti_page.py                                                         |	         71 |
  |PAGE\sensori_page.py                                                             |	        191 |
- |PAGE\stanze_page.py                                                              |	        178 |
- |PAGE\tastierino_dialog.py                                                        |	        132 |
+ |PAGE\stanze_page.py                                                              |	        165 |
+ |PAGE\tastierino_dialog.py                                                        |	        144 |
  |STYLE\add_sensore.qss                                                            |	        115 |
  |STYLE\header.qss                                                                 |	         35 |
  |STYLE\home.qss                                                                   |	         24 |
@@ -45,4 +46,4 @@ Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\venv
  |STYLE\stanze.qss                                                                 |	         70 |
  |STYLE\tastierino.qss                                                             |	         19 |
  |==================================================================================================| 
- |Total lines                                                                      |	       6507 |
+ |Total lines                                                                      |	       6730 |

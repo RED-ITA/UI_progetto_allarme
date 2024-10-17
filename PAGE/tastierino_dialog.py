@@ -72,26 +72,12 @@ class Tastierino(QWidget):
         log_file(3, "tastierino")
 
     def button_pressed(self, number):
-        log_file(301)
-
-        if len(self.current_value) < 6:
+        if len(self.current_value) < 6:  # Limite di 6 cifre
             if number == "x":
-                self.current_value = ""
-                log_file(405)
+                log_file(303)
+                self.current_value = ""   
             elif number == "v":
-                log_file(301)
-                if self.current_value == "123457":
-                    log_file(300)
-                    self.master.tastierino_pass()
-                else:
-                    self.cont_error += 1
-                    log_file(301)
-                    self.current_value = ""
-                    if self.cont_error > 2:
-                        log_file(403)
-                        self.master.tastierino_err()
-                    else:
-                        self.message_error()
+                pass
             elif len(self.current_value) == 0:
                 self.current_value = number
             else:
@@ -99,22 +85,40 @@ class Tastierino(QWidget):
             self.pin_display.update_display(self.current_value)
 
             if len(self.current_value) == 6:
-                log_file(301)
+                print("disabilitazione")
+                log_file(304)
                 for but in self.buttons.values():
                     testo = but.text()
+                    print(testo)
                     if testo != "":
                         but.setEnabled(False)
         else:
             if number == "x":
                 self.current_value = ""
-                log_file(405)
                 for but in self.buttons.values():
                     testo = but.text()
+                    print(testo)
                     if testo != "":
+                        log_file(305)
                         but.setEnabled(True)
+            elif number == "v":
+                log_file(302)
+                if self.current_value == "123457":
+                    log_file(300)
+                    self.master.tastierino_pass()
+                else:
+                    log_file(301)
+                    self.cont_error += 1
+                    print("conta")
+                    self.current_value = ""
+                    if self.cont_error > 2:  
+                        log_file(403)
+                        self.master.tastierino_err()
+                    else:
+                        self.message_error()
 
     def message_error(self):
-        log_file(404)
+        log_file(6, f"{3 - self.cont_error} tentativi rimasti")
         ico = QIcon(f.get_img("bell_orange.png"))
         titolo = f"Errore {self.cont_error}"
         desc = f"{3 - self.cont_error} tentativi rimasti"
@@ -136,7 +140,7 @@ class Tastierino(QWidget):
         errore.exec()
 
     def handle_messagebox_click(self, button):
-        log_file(405)
+        log_file(305)
         # Riabilita i pulsanti dopo la chiusura del QMessageBox
         for button in self.buttons.values():
             button.setEnabled(True)

@@ -25,6 +25,12 @@ class CodiceFilter(logging.Filter):
 # Logger configuration for multiple log files
 def setup_logger():
     logger = logging.getLogger('my_logger')
+
+    # Verifica se ci sono già degli handler
+    if len(logger.handlers) > 0:
+        # Se ci sono già degli handler, ritorna il logger esistente
+        return logger
+    
     logger.setLevel(logging.DEBUG)  # Set the minimum logger level
 
     # Specify the directory for log files
@@ -116,6 +122,7 @@ log_messages = {
     3: ('INFO', 'Costruzione dell\'interfaccia utente: '),
     4: ('INFO', 'Impostazione del colore di sfondo: '),
     5: ('INFO', 'Caricamento del file di stile: '),
+    6: ('INFO', 'NOTIFICATO: '),
     # WARNING
     404: ('WARNING', 'Errore sconosciuto'),
     
@@ -143,6 +150,10 @@ log_messages = {
     #tastierino
     300: ('INFO', 'Codice Corretto'),
     301: ('INFO', 'Codice Errato'),
+    302: ('INFO', 'Confermato Codice'),
+    303: ('INFO', 'Cancellato Codice'),
+    304: ('INFO', 'Disabilitati numeri'),
+    305: ('INFO', 'Riabilitati Numeri'),
     # CRITICAL
     403: ('CRITICAL', 'Tentativo di forzatura'),
 
@@ -164,6 +175,10 @@ log_messages = {
     2007: ('INFO', 'Recupero di tutti i sensori per la stanza:'),
     2008: ('INFO', 'Accensione Allarme'),
     2009: ('INFO', 'Spegnimento Allarme'),
+    2010: ('INFO', 'Spegnimento Allarme'),
+    2011: ('INFO', 'Tentativo di forzatura'),
+    2012: ('INFO', 'Inserimento nuova accensione'),
+    2013: ('INFO', 'Inserimento nuovo spegnimento'),
     # CRITICAL
     # SUCCESS
     2100: ('SUCCESS', 'Operazione sul database riuscita'),
@@ -176,6 +191,8 @@ log_messages = {
     2107: ('SUCCESS', 'Spegnimento Allarme, risucito'),
     2108: ('SUCCESS', 'Spegnimento Allarme, salvata data in ACTIVITY'),
     2109: ('SUCCESS', 'Tentativo di forzatura salvato'),
+    2110: ('SUCCESS', 'Salvataggio accensione riuscita'),
+    2111: ('SUCCESS', 'Salvataggio spegnimento riuscito'),
     # ERROR
     2400: ('ERROR', 'Operazione sul database fallita'),
     2401: ('ERROR', 'Errore del database'),
@@ -184,6 +201,9 @@ log_messages = {
     2404: ('ERROR', 'Accensione Allarme, salvata data in ACTIVITY FALLITO'),
     2405: ('ERROR', 'Spegnimento Allarme FALLITO'),
     2406: ('ERROR', 'Spegnimento Allarme, salvata data in ACTIVITY FALLITO'),
+    2407: ('ERROR', 'Errore salvataggio forzatura'),
+    2408: ('ERROR', 'Errore salvataggio di accensione'),
+    2409: ('ERROR', 'Errore salvataggio di spegnimento'),
     # WARNING
 
     # THREAD messages
