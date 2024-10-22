@@ -204,6 +204,7 @@ log_messages = {
     2407: ('ERROR', 'Errore salvataggio forzatura'),
     2408: ('ERROR', 'Errore salvataggio di accensione'),
     2409: ('ERROR', 'Errore salvataggio di spegnimento'),
+    2410: ('ERROR', 'Errore richiesta sensori stanze'),
     # WARNING
 
     # THREAD messages
