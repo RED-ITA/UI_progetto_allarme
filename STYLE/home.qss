@@ -1,0 +1,29 @@
+@font-face {
+    font-family: 'SF Pro';
+    src: url('fonts/SFProDisplay-Regular.woff2') format('woff2'),
+         url('fonts/SFProDisplay-Regular.woff') format('woff'),
+         url('fonts/SFProDisplay-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+QLabel#ora
+{
+    color: #000000;
+    font-size: 200px;
+}
+
+
+QLabel#data
+{
+    color: #000000;
+    font-size: 50px;
+    font-family: 'SF Pro';
+
+}
+
+QLabel#label
+{
+    color: #000000;
+    font-size: 50px;
+}

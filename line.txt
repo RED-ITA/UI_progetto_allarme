@@ -1,0 +1,49 @@
+Path to ignore: C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software
+-------------------------------------------------
+Caching entries
+Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\API\DB\__pycache__
+Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\API\__pycache__
+Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\CMP\__pycache__
+Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\OBJ\__pycache__
+Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\PAGE\__pycache__
+Skipping entry C:\Users\psalv\OneDrive\Documenti\Progetto Allarme\Software\venv
+
+
+ |==================================================================================================|
+ |                               Counting Lines 	                                                |
+ |API\DB\API_bg.py                                                                 |	          0 |
+ |API\DB\API_generale.py                                                           |	         76 |
+ |API\DB\API_ui.py                                                                 |	        353 |
+ |API\funzioni.py                                                                  |	         42 |
+ |API\impo_bin.py                                                                  |	         51 |
+ |API\LOG.py                                                                       |	        194 |
+ |API\modbus.py                                                                    |	       3383 |
+ |API\modbus_generico.py                                                           |	        368 |
+ |API\modbus_strutture.py                                                          |	         26 |
+ |CMP\header.py                                                                    |	        271 |
+ |CMP\QDispalyNumpad.py                                                            |	         49 |
+ |CMP\QPushButtonBadge.py                                                          |	         80 |
+ |CMP\QPushButtonNoBadge.py                                                        |	         39 |
+ |CMP\QTastierino.py                                                               |	         60 |
+ |CMP\QWidgetSensore.py                                                            |	        113 |
+ |line.py                                                                          |	         57 |
+ |main.py                                                                          |	        162 |
+ |main_test.py                                                                     |	        166 |
+ |OBJ\OBJ_UI_Sensore.py                                                            |	         44 |
+ |PAGE\add_sensore_page.py                                                         |	        136 |
+ |PAGE\home_page.py                                                                |	        140 |
+ |PAGE\impostazioni_page.py                                                        |	         32 |
+ |PAGE\rilevamenti_page.py                                                         |	         71 |
+ |PAGE\sensori_page.py                                                             |	        191 |
+ |PAGE\stanze_page.py                                                              |	        165 |
+ |PAGE\tastierino_dialog.py                                                        |	        144 |
+ |STYLE\add_sensore.qss                                                            |	        115 |
+ |STYLE\header.qss                                                                 |	         35 |
+ |STYLE\home.qss                                                                   |	         24 |
+ |STYLE\impo.qss                                                                   |	          0 |
+ |STYLE\sensore.qss                                                                |	         20 |
+ |STYLE\sensori.qss                                                                |	         34 |
+ |STYLE\stanze.qss                                                                 |	         70 |
+ |STYLE\tastierino.qss                                                             |	         19 |
+ |==================================================================================================| 
+ |Total lines                                                                      |	       6730 |
