@@ -2,6 +2,9 @@ import sqlite3
 import time
 from API import funzioni as f
 from API.LOG import log_file 
+from PyQt6.QtCore import QThreadPool, QObject, pyqtSignal
+from concurrent.futures import ThreadPoolExecutor, Future
+from functools import wraps
 
 from OBJ import OBJ_UI_Sensore as o
 
@@ -9,6 +12,68 @@ from OBJ import OBJ_UI_Sensore as o
 MAX_RETRIES = 10
 RETRY_DELAY = 0.1  # in seconds
 
+# Definizione del decoratore per rendere le funzioni asincrone
+executor = ThreadPoolExecutor()
+thread_pool = QThreadPool()
+"""
+
+    # Esegui il task asincrono appena carica l'interfaccia
+    self.start_async_task()
+
+def start_async_task(self):
+    # Definiamo i dati del sensore da inserire
+    sensor_data = (1, "Temperatura", "2024-10-22", "Cucina", 30, "Nessun Errore")
+    # Esegui la funzione add_sensor in modo asincrono
+    add_sensor(sensor_data).add_done_callback(self.on_task_done)
+
+def on_task_done(self, future):
+    try:
+        result = future.result()
+        self.label.setText(f"Successo: {result}")
+    except Exception as e:
+        self.label.setText(f"Errore: {str(e)}")
+        
+"""
+def run_async(callback_success=None, callback_failure=None):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            future = executor.submit(func, *args, **kwargs)
+
+            if callback_success or callback_failure:
+                watcher = FutureWatcher(future)
+                if callback_success:
+                    watcher.signals.success.connect(callback_success)
+                if callback_failure:
+                    watcher.signals.failure.connect(callback_failure)
+
+                # Aggiungiamo il watcher al thread pool di PyQt per evitare il blocco dell'interfaccia
+                thread_pool.start(watcher)
+
+            return future
+        return wrapper
+    return decorator
+
+class WorkerSignals(QObject):
+    success = pyqtSignal(object)  # Successo
+    failure = pyqtSignal(str)     # Fallimento
+
+class FutureWatcher(QObject):
+    def __init__(self, future: Future):
+        super().__init__()
+        self.signals = WorkerSignals()
+        self.future = future
+        thread_pool.start(self)  # Avvia il watcher in un thread separato
+
+    def run(self):
+        try:
+            result = self.future.result()
+            self.signals.success.emit(result)
+        except Exception as e:
+            self.signals.failure.emit(str(e))
+
+# Utilizzo del decoratore per rendere asincrone le funzioni
+@run_async()
 def add_sensor(sensor_data):
     """
     Adds a new sensor to the SENSORI table.
@@ -52,6 +117,7 @@ def add_sensor(sensor_data):
     log_file(2400)
     return 0  # Failure after retries
 
+@run_async()
 def edit_sensor(sensor_id, new_data):
     """
     Edits an existing sensor in the SENSORI table.
@@ -94,6 +160,7 @@ def edit_sensor(sensor_id, new_data):
     log_file(2400, e)
     return 0  # Failure after retries
 
+@run_async()
 def delete_sensor(sensor_pk):
     """
     Marks a sensor as inactive (Stato = 0) in the SENSORI table instead of deleting it.
@@ -136,6 +203,7 @@ def delete_sensor(sensor_pk):
     log_file(2400, e)
     return 0  # Failure after retries
 
+@run_async()
 def get_all_stanze():
     """
     Retrieves all rooms from the STANZE table.
@@ -158,6 +226,7 @@ def get_all_stanze():
         log_file(2401, e)
         return []
 
+@run_async()
 def get_all_sensori():
     """
     Retrieves all sensors from the SENSORI table.
@@ -180,6 +249,7 @@ def get_all_sensori():
         log_file(2400, e)
         return []
 
+@run_async()
 def get_all_logs():
     """
     Retrieves all log entries with a left join to the SENSORI table to include sensor details.
@@ -206,6 +276,7 @@ def get_all_logs():
         log_file(2400, e)
         return []
 
+@run_async()
 def get_sensor_by_pk(sensor_pk):
     """
     Retrieves a sensor from the SENSORI table by its primary key.
@@ -246,6 +317,7 @@ def get_sensor_by_pk(sensor_pk):
         log_file(2400, e)
         return None
 
+@run_async()
 def add_stanza(nome_stanza):
     """
     Adds a new room to the STANZE table.
@@ -284,6 +356,7 @@ def add_stanza(nome_stanza):
     log_file(2400)
     return 0  # Failure after retries
 
+@run_async()
 def get_sensori_by_stanza(stanza_nome):
     """
     Retrieves all sensors for a specific room from the SENSORI table.
@@ -319,7 +392,7 @@ def get_sensori_by_stanza(stanza_nome):
     log_file(2400)
     return []  # Failure after retries
             
-    
+@run_async()
 def aggiungi_forzatura(data):
     """
     Inserts a new entry into the FORZATURA table with the given date.
@@ -355,7 +428,7 @@ def aggiungi_forzatura(data):
     log_file(2400)
     return 0  # Failure after retries
 
-
+@run_async()
 def insert_activity(data_a):
     """
     Inserts a new entry into the ACTIVITY table with only the access date.
@@ -391,7 +464,7 @@ def insert_activity(data_a):
     log_file(2400, e)
     return 0  # Failure after retries
 
-
+@run_async()
 def update_activity_shutdown(log_id, data_s):
     """
     Updates the shutdown date for the latest entry in the ACTIVITY table.
