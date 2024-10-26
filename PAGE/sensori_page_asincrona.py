@@ -1,5 +1,5 @@
 from PyQt6.QtGui import QColor
-from PyQt6.QtCore import QFile, QTextStream, pyqtSignal, QThread, QObject
+from PyQt6.QtCore import QFile, QTextStream, pyqtSignal, QThread, QObject, QTimer
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QLabel, QVBoxLayout,
     QWidget, QHBoxLayout, QScrollArea, QPushButton
@@ -15,32 +15,19 @@ from CMP import (
     QPushButtonNoBadge as qn, 
     )
 from API.LOG import log_file
+import threading
 
-class Worker(QObject):
-    finished = pyqtSignal(object)
-    error = pyqtSignal(str)
 
-    def __init__(self, function, *args, **kwargs):
-        super().__init__()
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
-
-    def run(self):
-        try:
-            result = self.function(*self.args, **self.kwargs)
-            self.finished.emit(result)
-        except Exception as e:
-            self.error.emit(str(e))
 
 class Sensori_Page(QWidget):
 
     signal_add_sensor = pyqtSignal()
     signal_edit_sensor = pyqtSignal(int)  # Passa l'ID del sensore da modificare
-
+    lista_sensori = []
     def __init__(self, master, header):
         super().__init__()
-
+        
+        self.threads = []  # Lista per tenere traccia dei thread attivi
         self.master = master
         self.master.setWindowTitle("ImpoPage")
         self.header = header
@@ -52,12 +39,10 @@ class Sensori_Page(QWidget):
         self.setAutoFillBackground(True)
         self.set_background_color()
 
-        self.threads = []  # Lista per tenere traccia dei thread attivi
+        
 
     def init_ui(self):
         log_file(1, "sensori")
-
-        
         # Inizializza i sensori
         self.init_sensors()
 
@@ -69,12 +54,13 @@ class Sensori_Page(QWidget):
 
     def init_sensors(self):
         log_file(2005)
-        # Recupera tutti i sensori dal database in modo asincrono
-        self.run_in_thread(db_api.get_all_sensori, self.on_sensors_loaded)
+        # Recupera tutti i sensori dal database in modo asincrono tramite la coda
+        future = db_api.get_all_sensori()
+        future.add_done_callback(self.on_sensors_loaded)
 
     def on_sensors_loaded(self, result):
         try:
-            sensors_data = result
+            sensors_data = result.result()
             self.lista_sensori = []
 
             for data in sensors_data:
@@ -90,7 +76,7 @@ class Sensori_Page(QWidget):
                     Stato=data[7]
                 )
                 self.lista_sensori.append(sensor)
-
+            log_file(1000, "loaded ended")
             self.refresh_ui()
         except Exception as e:
             log_file(2401, str(e))
@@ -178,7 +164,7 @@ class Sensori_Page(QWidget):
         # Svuota le layout prima di popolarle
         self.clear_layout(self.h_layout_active)
         self.clear_layout(self.h_layout_inactive)
-
+        print(self.lista_sensori)
         # Aggiunge i widget dei sensori alle rispettive layout
         for sensore in self.lista_sensori:
             sensor_widget = w.QWidgetSensore(sensore)
@@ -210,12 +196,13 @@ class Sensori_Page(QWidget):
 
     def elimina_sensore(self, sensor_pk):
         log_file(100, f" {sensor_pk}")
-        # Aggiorna lo stato del sensore nel database in modo asincrono
-        self.run_in_thread(db_api.delete_sensor, self.on_delete_sensor_done, sensor_pk)
+        # Aggiorna lo stato del sensore nel database in modo asincrono tramite la coda
+        future = db_api.delete_sensor()
+        future.add_done_callback(self.on_delete_sensor_done)
 
     def on_delete_sensor_done(self, result):
         try:
-            if result:
+            if result.result():
                 log_file(2103)
             else:
                 log_file(2400)
@@ -251,18 +238,3 @@ class Sensori_Page(QWidget):
             style_sheet = stream.readAll()
             file.close()
             self.setStyleSheet(style_sheet)
-
-    def run_in_thread(self, function, callback, *args, **kwargs):
-        worker = Worker(function, *args, **kwargs)
-        thread = QThread()
-        worker.moveToThread(thread)
-        worker.finished.connect(callback)
-        worker.error.connect(lambda e: log_file(2401, e))
-        thread.started.connect(worker.run)
-        worker.finished.connect(thread.quit)
-        worker.finished.connect(worker.deleteLater)
-        thread.finished.connect(thread.deleteLater)
-        self.threads.append(thread)  # Mantiene un riferimento al thread
-        thread.finished.connect(lambda: self.threads.remove(thread))  # Rimuove il thread dalla lista quando terminato
-        thread.start()
-

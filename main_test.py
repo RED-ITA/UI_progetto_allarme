@@ -8,6 +8,7 @@ import sys
 import time 
 from API import funzioni as f
 from API.DB import API_ui as db_api
+from API.DB.API_ui import QueueProcessor
 from OBJ import OBJ_UI_Sensore as o
 from CMP import QWidgetSensore as w
 from API.LOG import log_file
@@ -25,6 +26,7 @@ from CMP import header as h
 class MainWindows(QMainWindow):
 
     def __init__(self):
+        self.queue_processor = QueueProcessor()
         super().__init__()
         
         self.setWindowTitle("ALLARME APP")
