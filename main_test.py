@@ -11,91 +11,14 @@ from API.DB import API_ui as db_api
 from OBJ import OBJ_UI_Sensore as o
 from CMP import QWidgetSensore as w
 from API.LOG import log_file
-from PAGE import loading_page as ld
+from PAGE import loading_page as ld, sensori_page_asincrona as sensori
 
 import os
 
 from CMP import header as h 
 
 
-class WorkerSignals(QObject):
-    finished = pyqtSignal()
-    error = pyqtSignal(str)
 
-class Task(QRunnable):
-    def __init__(self):
-        super().__init__()
-        self.signals = WorkerSignals()
-
-    def run(self):
-        try:
-            # Simula un task che richiede del tempo (es. operazione sul database)
-            time.sleep(5)  # Sostituisci con la tua funzione bloccante
-            self.signals.finished.emit()  # Task completato con successo
-        except Exception as e:
-            self.signals.error.emit(str(e))  # In caso di errore
-
-
-class MainWindow(QWidget):
-    def __init__(self, master):
-        super().__init__()
-        self.master = master
-        self.thread_pool = QThreadPool()  # QThreadPool per gestire i thread
-        self.init_ui()
-
-    def init_ui(self):
-        # Layout principale
-        
-        self.setWindowTitle("PyQt6 Schermata di Caricamento Dinamica")
-        # Pulsante per avviare il task
-        self.button = QPushButton("Avvia Task Lungo", self)
-        self.button.clicked.connect(self.start_long_task)
-
-        # Layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.button)
-        self.setLayout(layout)
-        self.set_background_color()
-        self.load_stylesheet()
-
-    def start_long_task(self):
-        self.master.loading_p()
-        # Mostra la schermata di caricamento
-
-        # Esegui il task in modo asincrono
-        task = Task()
-        task.signals.finished.connect(self.on_task_finished)
-        task.signals.error.connect(self.on_task_error)
-
-        # Avvia il task usando il thread pool
-        self.thread_pool.start(task)
-
-    def on_task_finished(self):
-        self.master.loading_e()
-        # Chiudi la schermata di caricamento e riabilita il pulsante
-
-    def on_task_error(self, error_message):
-        # Gestisci eventuali errori, chiudi la schermata di caricamento e riabilita il pulsante
-        self.master.loading_e()
-        print(f"Errore durante l'esecuzione del task: {error_message}")
-
-    def set_background_color(self):
-        
-        # Imposta il colore di sfondo
-        palette = self.palette()
-        palette.setColor(self.backgroundRole(), QColor.fromRgb(241, 241, 241))
-        self.setPalette(palette)
-        self.load_stylesheet()
-
-    def load_stylesheet(self):
-       
-        # Carica il file di stile
-        file = QFile(f.get_style("sensori.qss"))
-        if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
-            stream = QTextStream(file)
-            style_sheet = stream.readAll()
-            file.close()
-            self.setStyleSheet(style_sheet)
 
 
 
@@ -128,7 +51,7 @@ class MainWindows(QMainWindow):
         self.super_layout.addWidget(self.header)
         
         # PAGINA index 0
-        self.home_page = MainWindow(self)
+        self.home_page = sensori.Sensori_Page(self, header=self.header)
         self.main_layout.addWidget(self.home_page)
 
         # PAGINA index 1
