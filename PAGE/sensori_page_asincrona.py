@@ -23,10 +23,14 @@ class Sensori_Page(QWidget):
 
     signal_add_sensor = pyqtSignal()
     signal_edit_sensor = pyqtSignal(int)  # Passa l'ID del sensore da modificare
+    loaded_complet = pyqtSignal(list)
+
     lista_sensori = []
     def __init__(self, master, header):
         super().__init__()
         
+        self.loaded_complet.connect(self.on_sensors_loaded)
+
         self.threads = []  # Lista per tenere traccia dei thread attivi
         self.master = master
         self.master.setWindowTitle("ImpoPage")
@@ -56,11 +60,20 @@ class Sensori_Page(QWidget):
         log_file(2005)
         # Recupera tutti i sensori dal database in modo asincrono tramite la coda
         future = db_api.get_all_sensori()
-        future.add_done_callback(self.on_sensors_loaded)
+        future.add_done_callback(self.handle_sensor_loaded)
+
+    def handle_sensor_loaded(self, future):
+        self._log_thread_info("handle_loadedSensor_completata")
+        try:
+            risult = future.result()
+            self.loaded_complet.emit(risult)
+            log_file(1000, str(risult))
+        except Exception as e:
+            log_file(404, f"{e}")
 
     def on_sensors_loaded(self, result):
         try:
-            sensors_data = result.result()
+            sensors_data = result
             self.lista_sensori = []
 
             for data in sensors_data:
@@ -238,3 +251,10 @@ class Sensori_Page(QWidget):
             style_sheet = stream.readAll()
             file.close()
             self.setStyleSheet(style_sheet)
+
+    def _log_thread_info(self, function_name):
+        """Log thread information for diagnostics."""
+        current_thread = threading.current_thread()
+        log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
+        
+        
