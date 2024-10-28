@@ -1,5 +1,5 @@
 from PyQt6.QtGui import QColor
-from PyQt6.QtCore import QFile, QTextStream, pyqtSignal
+from PyQt6.QtCore import QFile, QTextStream, pyqtSignal, QThread, QObject, QTimer
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QLabel, QVBoxLayout,
     QWidget, QHBoxLayout, QScrollArea, QPushButton
@@ -15,15 +15,23 @@ from CMP import (
     QPushButtonNoBadge as qn, 
     )
 from API.LOG import log_file
+import threading
+
+
 
 class Sensori_Page(QWidget):
 
     signal_add_sensor = pyqtSignal()
     signal_edit_sensor = pyqtSignal(int)  # Passa l'ID del sensore da modificare
+    loaded_complet = pyqtSignal(list)
 
+    lista_sensori = []
     def __init__(self, master, header):
         super().__init__()
+        
+        self.loaded_complet.connect(self.on_sensors_loaded)
 
+        self.threads = []  # Lista per tenere traccia dei thread attivi
         self.master = master
         self.master.setWindowTitle("ImpoPage")
         self.header = header
@@ -35,15 +43,10 @@ class Sensori_Page(QWidget):
         self.setAutoFillBackground(True)
         self.set_background_color()
 
+        
+
     def init_ui(self):
         log_file(1, "sensori")
-
-        # Imposta le dimensioni della finestra
-        screen_geometry = QApplication.primaryScreen().geometry()
-        self.screen_width = screen_geometry.width()
-        self.screen_height = screen_geometry.height()
-        self.setGeometry(0, 0, self.screen_width, self.screen_height)
-
         # Inizializza i sensori
         self.init_sensors()
 
@@ -55,23 +58,41 @@ class Sensori_Page(QWidget):
 
     def init_sensors(self):
         log_file(2005)
-        # Recupera tutti i sensori dal database
-        sensors_data = db_api.get_all_sensori()
-        self.lista_sensori = []
+        # Recupera tutti i sensori dal database in modo asincrono tramite la coda
+        future = db_api.get_all_sensori()
+        future.add_done_callback(self.handle_sensor_loaded)
 
-        for data in sensors_data:
-            # Crea l'oggetto Sensore con i dati dal database
-            sensor = o.Sensore(
-                SensorePk=data[0],
-                Id=data[1],
-                Tipo=data[2],
-                Data=data[3],
-                Stanza=data[4],
-                Soglia=data[5],
-                Error=data[6],
-                Stato=data[7]
-            )
-            self.lista_sensori.append(sensor)
+    def handle_sensor_loaded(self, future):
+        self._log_thread_info("handle_loadedSensor_completata")
+        try:
+            risult = future.result()
+            self.loaded_complet.emit(risult)
+            log_file(1000, str(risult))
+        except Exception as e:
+            log_file(404, f"{e}")
+
+    def on_sensors_loaded(self, result):
+        try:
+            sensors_data = result
+            self.lista_sensori = []
+
+            for data in sensors_data:
+                # Crea l'oggetto Sensore con i dati dal database
+                sensor = o.Sensore(
+                    SensorePk=data[0],
+                    Id=data[1],
+                    Tipo=data[2],
+                    Data=data[3],
+                    Stanza=data[4],
+                    Soglia=data[5],
+                    Error=data[6],
+                    Stato=data[7]
+                )
+                self.lista_sensori.append(sensor)
+            log_file(1000, "loaded ended")
+            self.refresh_ui()
+        except Exception as e:
+            log_file(2401, str(e))
 
     def build_ui(self):
         log_file(3, "sensori")
@@ -156,7 +177,6 @@ class Sensori_Page(QWidget):
         # Svuota le layout prima di popolarle
         self.clear_layout(self.h_layout_active)
         self.clear_layout(self.h_layout_inactive)
-
         # Aggiunge i widget dei sensori alle rispettive layout
         for sensore in self.lista_sensori:
             sensor_widget = w.QWidgetSensore(sensore)
@@ -188,15 +208,20 @@ class Sensori_Page(QWidget):
 
     def elimina_sensore(self, sensor_pk):
         log_file(100, f" {sensor_pk}")
-        # Aggiorna lo stato del sensore nel database
-        result = db_api.delete_sensor(sensor_pk)
-        if result:
-            log_file(2103)
-        else:
-            log_file(2400)
-        # Aggiorna la lista dei sensori
-        self.init_sensors()
-        self.refresh_ui()
+        # Aggiorna lo stato del sensore nel database in modo asincrono tramite la coda
+        future = db_api.delete_sensor()
+        future.add_done_callback(self.on_delete_sensor_done)
+
+    def on_delete_sensor_done(self, result):
+        try:
+            if result.result():
+                log_file(2103)
+            else:
+                log_file(2400)
+            # Aggiorna la lista dei sensori
+            self.init_sensors()
+        except Exception as e:
+            log_file(2401, str(e))
 
     def on_add_sensor_clicked(self):
         log_file(104)
@@ -225,3 +250,10 @@ class Sensori_Page(QWidget):
             style_sheet = stream.readAll()
             file.close()
             self.setStyleSheet(style_sheet)
+
+    def _log_thread_info(self, function_name):
+        """Log thread information for diagnostics."""
+        current_thread = threading.current_thread()
+        log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
+        
+        

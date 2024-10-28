@@ -12,7 +12,7 @@ from API.DB.API_ui import QueueProcessor
 from OBJ import OBJ_UI_Sensore as o
 from CMP import QWidgetSensore as w
 from API.LOG import log_file
-from PAGE import loading_page as ld, sensori_page_asincrona as sensori
+from PAGE import loading_page as ld, stanze_page as sensori
 
 import os
 
@@ -53,7 +53,7 @@ class MainWindows(QMainWindow):
         self.super_layout.addWidget(self.header)
         
         # PAGINA index 0
-        self.home_page = sensori.Sensori_Page(self, header=self.header)
+        self.home_page = sensori.Stanze_Page(self, header=self.header)
         self.main_layout.addWidget(self.home_page)
 
         # PAGINA index 1
