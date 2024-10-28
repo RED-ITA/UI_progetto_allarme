@@ -204,7 +204,7 @@ class Stanze_Page(QWidget):
         nome_stanza = self.nome_stanza_input.text().strip()
         if nome_stanza:
             log_file(204, f"{nome_stanza}")
-            result = db_api.add_stanza(nome_stanza)
+            result = db_api.add_stanza(nome_stanza) #todo
             if result:
                 log_file(2104, f"{nome_stanza}")
                 self.populate_stanze()

@@ -20,10 +20,14 @@ from PAGE import (
      sensori_page as sensori, 
      tastierino_dialog as tastierino
 )
+import threading
 
 class MainWindows(QMainWindow):
 
     def __init__(self):
+        # Dentro la classe Sensori_Page
+        signal_sensor_data_loaded = pyqtSignal(list, int)  # Passa i dati del sensore e la sensor_pk
+
         db.create_db()
         super().__init__()
         log.setup_logger()
@@ -140,10 +144,25 @@ class MainWindows(QMainWindow):
         # Modifica l'header se necessario
         self.header.set_tipo(5)  # Supponendo che il tipo 1 modifichi l'header
         # Carica i dati del sensore
-        sensor = db_api.get_sensor_by_pk(sensor_pk)
-        self.sensor_form_page.load_sensor_data(sensor)
-        # Imposta una variabile per indicare che stiamo modificando un sensore esistente
+        future = db_api.get_sensor_by_pk(sensor_pk)
+        future.add_done_callback(lambda fut: self.handle_sensor_loaded(fut, sensor_pk))
+
+    def handle_sensor_loaded(self, future, sensor_pk):
+        self._log_thread_info("handle_loadedSensor_completata")
+        try:
+            risult = future.result()
+            self.signal_sensor_data_loaded.emit(risult, sensor_pk)
+            log.log_file(1000, f"Sensor loaded: {risult}")
+            # Chiama la funzione on_sensors_loaded con il risultato e sensor_pk
+        except Exception as e:
+            log.log_file(404, f"{e}")
+
+    def on_sensors_loaded(self, result, sensor_pk):
+        # Carica i dati del sensore nella form di modifica
+        self.sensor_form_page.load_sensor_data(result)
+        # Imposta la modalità di modifica
         self.sensor_form_page.edit_mode = True
+        # Passa la primary key del sensore alla pagina di modifica
         self.sensor_form_page.sensor_pk = sensor_pk
         # Cambia pagina
         self.main_layout.setCurrentIndex(4)
@@ -190,6 +209,13 @@ class MainWindows(QMainWindow):
         senso_page.init_sensors()
         senso_page.refresh_ui()
             
+    
+    def _log_thread_info(self, function_name):
+        """Log thread information for diagnostics."""
+        current_thread = threading.current_thread()
+        log.log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
+        
+        
 
 
 if __name__ == "__main__":
