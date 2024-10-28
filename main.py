@@ -1,5 +1,5 @@
-from PyQt6.QtGui import QColor
-from PyQt6.QtCore import Qt, pyqtSignal, QMetaObject, Q_ARG, QTimer
+from PyQt6.QtGui import  QColor
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
 
 import os
@@ -19,8 +19,7 @@ from PAGE import (
      impostazioni_page as impo , 
      stanze_page as stanze,
      sensori_page as sensori, 
-     tastierino_dialog as tastierino,
-     loading_page as loading
+     tastierino_dialog as tastierino
 )
 import threading
 
@@ -29,6 +28,9 @@ class MainWindows(QMainWindow):
     signal_sensor_saved = pyqtSignal(bool)  # Segnale per indicare il completamento del salvataggio del sensore
 
     def __init__(self):
+        # Dentro la classe Sensori_Page
+        
+
         db.create_db()
         super().__init__()
         log.setup_logger()
@@ -37,6 +39,7 @@ class MainWindows(QMainWindow):
         screen_geometry = QApplication.primaryScreen().geometry()
         self.screen_width = screen_geometry.width()
         self.screen_height = screen_geometry.height()
+
 
         self.setGeometry(0, 0, self.screen_width, self.screen_height)
         
@@ -54,19 +57,15 @@ class MainWindows(QMainWindow):
             self.header = h.Header(self)
             self.super_layout.addWidget(self.header)
             
-            # PAGINA di caricamento (index 0)
-            self.loading_page = loading.LoadingScreen()
-            self.main_layout.addWidget(self.loading_page)
-
-            # PAGINA index 1
+            # PAGINA index 0
             self.home_page = home.Home_Page(self, self.header)
             self.main_layout.addWidget(self.home_page)
 
-            # PAGINA index 2
+            # PAGINA index 1
             impo_page = impo.Impostazioni_Page(self, self.header)
             self.main_layout.addWidget(impo_page)
 
-            # PAGINA index 3
+            # PAGINA index 2
             self.senso_page = sensori.Sensori_Page(self, self.header)
             self.main_layout.addWidget(self.senso_page)
 
@@ -74,23 +73,26 @@ class MainWindows(QMainWindow):
             self.senso_page.signal_add_sensor.connect(self.open_add_sensor_page)
             self.senso_page.signal_edit_sensor.connect(self.open_edit_sensor_page)
 
-            # PAGINA index 4
+            # PAGINA index 3
             stanze_page = stanze.Stanze_Page(self, self.header)
             self.main_layout.addWidget(stanze_page)
 
-            # PAGINA index 5 - Pagina del form del sensore
+            # PAGINA index 4 - Pagina del form del sensore
             self.sensor_form_page = add_sensore.SensorFormPage(self.header)
             self.main_layout.addWidget(self.sensor_form_page)
 
-            # PAGINA index 6 - Pagina del tastierino
+            # PAGINA index 5 - Pagina del tastierino
             self.tastierino_form_page = tastierino.Tastierino(self, self.header)
             self.main_layout.addWidget(self.tastierino_form_page)
+
+            
 
             # Connetti i segnali del form del sensore
             self.sensor_form_page.signal_back.connect(self.back_to_sensors_page)
             self.sensor_form_page.signal_save_sensor.connect(self.save_sensor_data)
             self.signal_sensor_saved.connect(self.handle_sensor_saved_ui_update)
             self.signal_sensor_data_loaded.connect(self.on_sensors_loaded)
+
 
             self.super_layout.addWidget(self.main_layout)
 
@@ -99,18 +101,18 @@ class MainWindows(QMainWindow):
 
             wid.setAutoFillBackground(True)
             self.set_background_color()
-            log.log_file(0, "caricate pagine")
+            log.log_file(0, "cariacate pagine")
         except Exception as e: 
             log.log_file(404, e)
 
     def tastierino_pass(self):
         print("passato")
         self.home_page.disattiva_passato()
-        self.change_page(1)
+        self.change_page(0)
 
     def tastierino_err(self):
         print("errore")
-        self.change_page(1)
+        self.change_page(0)
     
     def set_background_color(self):
         p = self.palette()
@@ -119,28 +121,20 @@ class MainWindows(QMainWindow):
         
     def inizializzaUI(self):
         try:
-            self.main_layout.setCurrentIndex(0)  # parte dalla pagina di caricamento
+            self.main_layout.setCurrentIndex(0) # parte dall widget 0 
             self.header.set_tipo(0)
-            # Carica tutte le pagine in background
-            threading.Thread(target=self._load_pages, daemon=True).start()
-            log.log_file(0, "settata la pagina iniziale")
+            log.log_file(0, "settata la pagina inizale")
         except Exception as e: 
             log.log_file(404, e)
 
-    def _load_pages(self):
-        # Simula il caricamento di risorse pesanti
-        import time
-        time.sleep(3)  # Simula il caricamento
-        QTimer.singleShot(0, lambda: self.change_page(1))  # Passa alla home una volta caricate le altre pagine
-
     def change_page(self, index):
         self.main_layout.setCurrentIndex(index)
-        if index == 1:
+        if index == 0:
             self.header.set_tipo(0)
 
     def open_add_sensor_page(self):
         # Modifica l'header se necessario
-        self.header.set_tipo(4)  # Supponendo che il tipo 4 modifichi l'header
+        self.header.set_tipo(4)  # Supponendo che il tipo 1 modifichi l'header
         # Pulisci i campi del form
         self.sensor_form_page.id_field.clear()
         self.sensor_form_page.tipo_field.setCurrentIndex(0)
@@ -150,11 +144,11 @@ class MainWindows(QMainWindow):
         # Imposta una variabile per indicare che stiamo aggiungendo un nuovo sensore
         self.sensor_form_page.edit_mode = False
         # Cambia pagina
-        self.main_layout.setCurrentIndex(5)  # L'indice della pagina del form del sensore
+        self.main_layout.setCurrentIndex(4)  # L'indice della pagina del form del sensore
 
     def open_edit_sensor_page(self, sensor_pk):
         # Modifica l'header se necessario
-        self.header.set_tipo(5)  # Supponendo che il tipo 5 modifichi l'header
+        self.header.set_tipo(5)  # Supponendo che il tipo 1 modifichi l'header
         # Carica i dati del sensore
         future = db_api.get_sensor_by_pk(sensor_pk)
         future.add_done_callback(lambda fut: self.handle_sensor_loaded(fut, sensor_pk))
@@ -163,8 +157,9 @@ class MainWindows(QMainWindow):
         self._log_thread_info("handle_loadedSensor_completata")
         try:
             risult = future.result()
-            QMetaObject.invokeMethod(self, "signal_sensor_data_loaded.emit", Qt.ConnectionType.QueuedConnection, Q_ARG(o.Sensore, risult), Q_ARG(int, sensor_pk))
+            self.signal_sensor_data_loaded.emit(risult, sensor_pk)
             log.log_file(1000, f"Sensor loaded: {risult}")
+            # Chiama la funzione on_sensors_loaded con il risultato e sensor_pk
         except Exception as e:
             log.log_file(404, f"{e}")
 
@@ -176,12 +171,12 @@ class MainWindows(QMainWindow):
         # Passa la primary key del sensore alla pagina di modifica
         self.sensor_form_page.sensor_pk = sensor_pk
         # Cambia pagina
-        self.main_layout.setCurrentIndex(5)
+        self.main_layout.setCurrentIndex(4)
 
     def back_to_sensors_page(self):
         # Torna alla pagina dei sensori
         self.header.set_tipo(3)
-        self.main_layout.setCurrentIndex(3)
+        self.main_layout.setCurrentIndex(2)
 
     def save_sensor_data(self, sensor_data):
         future = db_api.edit_sensor(self.sensor_form_page.sensor_pk, (
@@ -205,10 +200,10 @@ class MainWindows(QMainWindow):
         try:
             result = future.result()
             success = bool(result)
-            QMetaObject.invokeMethod(self, "signal_sensor_saved.emit", Qt.ConnectionType.QueuedConnection, Q_ARG(bool, success))
+            self.signal_sensor_saved.emit(success)
         except Exception as e:
             log.log_file(404, f"{e}")
-            QMetaObject.invokeMethod(self, "signal_sensor_saved.emit", Qt.ConnectionType.QueuedConnection, Q_ARG(bool, False))
+            self.signal_sensor_saved.emit(False)
 
     def handle_sensor_saved_ui_update(self, success):
         if success:
@@ -221,10 +216,14 @@ class MainWindows(QMainWindow):
         self.senso_page.init_sensors()
         self.senso_page.refresh_ui()
             
+    
     def _log_thread_info(self, function_name):
         """Log thread information for diagnostics."""
         current_thread = threading.current_thread()
         log.log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
+        
+        
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
