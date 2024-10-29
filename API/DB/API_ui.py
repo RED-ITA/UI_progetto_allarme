@@ -5,6 +5,11 @@ from API.LOG import log_file
 from PyQt6.QtCore import QThreadPool, QObject, pyqtSignal
 from concurrent.futures import ThreadPoolExecutor, Future
 from functools import wraps
+import threading
+from queue import Queue
+import functools
+import concurrent.futures
+import time
 
 from OBJ import OBJ_UI_Sensore as o
 
@@ -12,77 +17,57 @@ from OBJ import OBJ_UI_Sensore as o
 MAX_RETRIES = 10
 RETRY_DELAY = 0.1  # in seconds
 
-# Definizione del decoratore per rendere le funzioni asincrone
-executor = ThreadPoolExecutor()
-thread_pool = QThreadPool()
-"""
+from concurrent.futures import ThreadPoolExecutor
 
-    # Esegui il task asincrono appena carica l'interfaccia
-    self.start_async_task()
+class QueueProcessor:
+    def __init__(self):
+        log_file(1000, "queue processor (config 8)")
+        self.executor = ThreadPoolExecutor(max_workers=8)  # Puoi regolare il numero di worker in base alle tue esigenze
+        self.lock = threading.Lock()
+    
+    def submit_task(self, func, *args, **kwargs):
+        future = self.executor.submit(func, *args, **kwargs)
+        future.add_done_callback(self.handle_task_completion)
+        return future
 
-def start_async_task(self):
-    # Definiamo i dati del sensore da inserire
-    sensor_data = (1, "Temperatura", "2024-10-22", "Cucina", 30, "Nessun Errore")
-    # Esegui la funzione add_sensor in modo asincrono
-    add_sensor(sensor_data).add_done_callback(self.on_task_done)
-
-def on_task_done(self, future):
-    try:
-        result = future.result()
-        self.label.setText(f"Successo: {result}")
-    except Exception as e:
-        self.label.setText(f"Errore: {str(e)}")
-        
-"""
-def run_async(callback_success=None, callback_failure=None):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            future = executor.submit(func, *args, **kwargs)
-
-            if callback_success or callback_failure:
-                watcher = FutureWatcher(future)
-                if callback_success:
-                    watcher.signals.success.connect(callback_success)
-                if callback_failure:
-                    watcher.signals.failure.connect(callback_failure)
-
-                # Aggiungiamo il watcher al thread pool di PyQt per evitare il blocco dell'interfaccia
-                thread_pool.start(watcher)
-
-            return future
-        return wrapper
-    return decorator
-
-class WorkerSignals(QObject):
-    success = pyqtSignal(object)  # Successo
-    failure = pyqtSignal(str)     # Fallimento
-
-class FutureWatcher(QObject):
-    def __init__(self, future: Future):
-        super().__init__()
-        self.signals = WorkerSignals()
-        self.future = future
-        thread_pool.start(self)  # Avvia il watcher in un thread separato
-
-    def run(self):
+    def handle_task_completion(self, future):
         try:
-            result = self.future.result()
-            self.signals.success.emit(result)
+            result = future.result()
+            log_file(1002, f"Task completato con risultato: {result}")
         except Exception as e:
-            self.signals.failure.emit(str(e))
+            log_file(1001, f"Errore durante l'esecuzione del task: {e}")
+
+    def shutdown(self):
+        self.executor.shutdown(wait=True)
+
+# Mantieni il lock esistente
+_modbus_lock = threading.Lock()
+
+_queue_processor = QueueProcessor()
+
+def run_async(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        future = None
+        try:
+            log_file(1000, f"DEBUG DECORATOR | {func.__name__} chiamato con args: {args}, kwargs: {kwargs}")
+            # Usa QueueProcessor per inviare il task
+            future = _queue_processor.submit_task(func, *args, **kwargs)
+            log_file(1002, f"DEBUG DECORATOR | {func.__name__} messo in coda con Future: {future}")
+            
+            # Attendi il completamento del future con timeout
+            return future
+        except Exception as e:
+            log_file(1001, f"ERROR DECORATOR | Errore nel mettere in coda {func.__name__}: {str(e)}")
+            if future:
+                future.set_exception(e)
+            return None
+        
+    return wrapper
 
 # Utilizzo del decoratore per rendere asincrone le funzioni
-@run_async()
+@run_async
 def add_sensor(sensor_data):
-    """
-    Adds a new sensor to the SENSORI table.
-    
-    Args:
-        sensor_data (tuple): A tuple with sensor details (Id, Tipo, Data, Stanza, Soglia, Error).
-    
-    Retries if the database is locked and returns 1 on success and 0 on failure.
-    """
     log_file(2001)
     for attempt in range(MAX_RETRIES):
         try:
@@ -108,7 +93,7 @@ def add_sensor(sensor_data):
             else:
                 log_file(2400, e)
                 return 0  # Failure
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
             log_file(2402, e)
             return 0  # Failure
         except Exception as e:
@@ -117,18 +102,8 @@ def add_sensor(sensor_data):
     log_file(2400)
     return 0  # Failure after retries
 
-@run_async()
+@run_async
 def edit_sensor(sensor_id, new_data):
-    """
-    Edits an existing sensor in the SENSORI table.
-    
-    Args:
-        sensor_id (int): The ID of the sensor to update.
-        new_data (tuple): A tuple with new sensor data (Id, Tipo, Data, Stanza, Soglia, Error).
-    
-    Also updates the SISTEMA table's Update field to 1. Retries if the database is locked and
-    returns 1 on success and 0 on failure.
-    """
     log_file(2002, f"Evento su componente specifico: {sensor_id}")
     for attempt in range(MAX_RETRIES):
         try:
@@ -157,20 +132,11 @@ def edit_sensor(sensor_id, new_data):
         except Exception as e:
             log_file(2401, e)
             return 0  # Failure
-    log_file(2400, e)
+    log_file(2400)
     return 0  # Failure after retries
 
-@run_async()
+@run_async
 def delete_sensor(sensor_pk):
-    """
-    Marks a sensor as inactive (Stato = 0) in the SENSORI table instead of deleting it.
-    
-    Args:
-        sensor_pk (int): The primary key of the sensor to mark as inactive.
-    
-    Also updates the SISTEMA table's Update field to 1. Retries if the database is locked 
-    and returns 1 on success and 0 on failure.
-    """
     log_file(2003, f"Evento su componente specifico: {sensor_pk}")
     for attempt in range(MAX_RETRIES):
         try:
@@ -200,17 +166,11 @@ def delete_sensor(sensor_pk):
         except Exception as e:
             log_file(2401, e)
             return 0  # Failure
-    log_file(2400, e)
+    log_file(2400)
     return 0  # Failure after retries
 
-@run_async()
+@run_async
 def get_all_stanze():
-    """
-    Retrieves all rooms from the STANZE table.
-    
-    Returns:
-        list: A list of tuples with all room data.
-    """
     log_file(2004)
     try:
         conn = sqlite3.connect(f.get_db())
@@ -220,20 +180,14 @@ def get_all_stanze():
         stanze = c.fetchall()
 
         conn.close()
-        log_file(2100, e)
+        log_file(2100)
         return stanze
     except Exception as e:
         log_file(2401, e)
         return []
 
-@run_async()
+@run_async
 def get_all_sensori():
-    """
-    Retrieves all sensors from the SENSORI table.
-    
-    Returns:
-        list: A list of tuples with all sensor data.
-    """
     log_file(2005)
     try:
         conn = sqlite3.connect(f.get_db())
@@ -249,14 +203,8 @@ def get_all_sensori():
         log_file(2400, e)
         return []
 
-@run_async()
+@run_async
 def get_all_logs():
-    """
-    Retrieves all log entries with a left join to the SENSORI table to include sensor details.
-    
-    Returns:
-        list: A list of tuples with the combined log and sensor data.
-    """
     log_file(2006)
     try:
         conn = sqlite3.connect(f.get_db())
@@ -276,17 +224,8 @@ def get_all_logs():
         log_file(2400, e)
         return []
 
-@run_async()
+@run_async
 def get_sensor_by_pk(sensor_pk):
-    """
-    Retrieves a sensor from the SENSORI table by its primary key.
-    
-    Args:
-        sensor_pk (int): The primary key of the sensor.
-    
-    Returns:
-        Sensore: An instance of Sensore with the sensor's data, or None if not found.
-    """
     log_file(2007, f"Evento completato su componente specifico: {sensor_pk}")
     try:
         conn = sqlite3.connect(f.get_db())
@@ -317,16 +256,8 @@ def get_sensor_by_pk(sensor_pk):
         log_file(2400, e)
         return None
 
-@run_async()
+@run_async
 def add_stanza(nome_stanza):
-    """
-    Adds a new room to the STANZE table.
-    
-    Args:
-        nome_stanza (str): The name of the room to add.
-    
-    Retries if the database is locked and returns 1 on success and 0 on failure.
-    """
     log_file(2008, f"Evento su componente specifico: {nome_stanza}")
     for attempt in range(MAX_RETRIES):
         try:
@@ -347,7 +278,7 @@ def add_stanza(nome_stanza):
             else:
                 log_file(2401, e)
                 return 0  # Failure
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
             log_file(2402, e)
             return 0  # Failure
         except Exception as e:
@@ -356,17 +287,8 @@ def add_stanza(nome_stanza):
     log_file(2400)
     return 0  # Failure after retries
 
-@run_async()
+@run_async
 def get_sensori_by_stanza(stanza_nome):
-    """
-    Retrieves all sensors for a specific room from the SENSORI table.
-
-    Args:
-        stanza_nome (str): The name of the room.
-
-    Returns:
-        list: A list of tuples with all sensor data for the specified room.
-    """
     log_file(2007, f"Evento completato su componente specifico: {stanza_nome}")
     for attempt in range(MAX_RETRIES):
         try:
@@ -391,17 +313,9 @@ def get_sensori_by_stanza(stanza_nome):
             return []  # Failure
     log_file(2400)
     return []  # Failure after retries
-            
-@run_async()
+
+@run_async
 def aggiungi_forzatura(data):
-    """
-    Inserts a new entry into the FORZATURA table with the given date.
-
-    Args:
-        data (str): The date to insert.
-
-    Retries if the database is locked and returns 1 on success and 0 on failure.
-    """
     log_file(2011, f": {data}")
     for attempt in range(MAX_RETRIES):
         try:
@@ -428,16 +342,8 @@ def aggiungi_forzatura(data):
     log_file(2400)
     return 0  # Failure after retries
 
-@run_async()
+@run_async
 def insert_activity(data_a):
-    """
-    Inserts a new entry into the ACTIVITY table with only the access date.
-
-    Args:
-        data_a (str): The access date to insert.
-
-    Retries if the database is locked and returns 1 on success and 0 on failure.
-    """
     log_file(2012, f": {data_a}")
     for attempt in range(MAX_RETRIES):
         try:
@@ -461,20 +367,11 @@ def insert_activity(data_a):
         except Exception as e:
             log_file(2408, e)
             return 0  # Failure
-    log_file(2400, e)
+    log_file(2400)
     return 0  # Failure after retries
 
-@run_async()
+@run_async
 def update_activity_shutdown(log_id, data_s):
-    """
-    Updates the shutdown date for the latest entry in the ACTIVITY table.
-
-    Args:
-        log_id (int): The LogId of the activity to update.
-        data_s (str): The shutdown date to insert.
-
-    Retries if the database is locked and returns 1 on success and 0 on failure.
-    """
     log_file(2013, f": {data_s}")
     for attempt in range(MAX_RETRIES):
         try:

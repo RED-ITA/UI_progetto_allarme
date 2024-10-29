@@ -209,8 +209,9 @@ log_messages = {
 
     # THREAD messages
     # INFO
-    1000: ('INFO', ''),
-    1500: ('INFO', ''),
+    1000: ('INFO', 'thread: '),
+    1001: ('WARNING', 'thread: '),
+    1002: ('SUCCESS', 'thread: '),
     # CRITICAL
     # SUCCESS
     # ERROR

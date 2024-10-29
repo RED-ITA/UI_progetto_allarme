@@ -35,70 +35,67 @@ class LoadingScreen(QWidget):
         <html>
         <head>
             <style>
-                body {{
-                    margin: 0;
-                    background: rgb(241, 241, 241);
-                }}
-                .container {{
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                }}
-                .loader {{
-                  --c1:#673b14;
-                  --c2:#f8b13b;
-                  width: 40px;
-                  height: 80px;
-                  border-top: 4px solid var(--c1);
-                  border-bottom: 4px solid var(--c1);
-                  background: linear-gradient(90deg, var(--c1) 2px, var(--c2) 0 5px,var(--c1) 0) 50%/7px 8px no-repeat;
-                  display: grid;
-                  overflow: hidden;
-                  animation: l5-0 2s infinite linear;
-                }}
-                .loader::before,
-                .loader::after {{
-                  content: "";
-                  grid-area: 1/1;
-                  width: 75%;
-                  height: calc(50% - 4px);
-                  margin: 0 auto;
-                  border: 2px solid var(--c1);
-                  border-top: 0;
-                  box-sizing: content-box;
-                  border-radius: 0 0 40% 40%;
-                  -webkit-mask: 
-                    linear-gradient(#000 0 0) bottom/4px 2px no-repeat,
-                    linear-gradient(#000 0 0);
-                  -webkit-mask-composite: destination-out;
-                          mask-composite: exclude;
-                  background: 
-                    linear-gradient(var(--d,0deg),var(--c2) 50%,#0000 0) bottom /100% 205%,
-                    linear-gradient(var(--c2) 0 0) center/0 100%;
-                  background-repeat: no-repeat;
-                  animation: inherit;
-                  animation-name: l5-1;
-                }}
-                .loader::after {{
-                  transform-origin: 50% calc(100% + 2px);
-                  transform: scaleY(-1);
-                  --s:3px;
-                  --d:180deg;
-                }}
-                @keyframes l5-0 {{
-                  80%  {{transform: rotate(0)}}
-                  100% {{transform: rotate(0.5turn)}}
-                }}
-                @keyframes l5-1 {{
-                  10%,70%  {{background-size:100% 205%,var(--s,0) 100%}}
-                  70%,100% {{background-position: top,center}}
-                }}
-            </style>
+  body {{
+    margin: 0;
+    background: rgb(241, 241, 241);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }}
+
+  .spinner {{
+    position: relative;
+  }}
+
+  .spinner div {{
+    width: 10px;
+    height: 30px;
+    background: #444444;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    opacity: 0;
+    border-radius: 50px;
+    box-shadow: 0 0 3px rgba(0,0,0,0.2);
+    animation: fade 1s linear infinite;
+    transform-origin: center -40px;
+  }}
+
+  @keyframes fade {{
+    from {{ opacity: 1; }}
+    to {{ opacity: 0.25; }}
+  }}
+
+  .spinner div.bar1 {{ transform: rotate(0deg); animation-delay: 0s; }}
+  .spinner div.bar2 {{ transform: rotate(30deg); animation-delay: -0.9167s; }}
+  .spinner div.bar3 {{ transform: rotate(60deg); animation-delay: -0.833s; }}
+  .spinner div.bar4 {{ transform: rotate(90deg); animation-delay: -0.7497s; }}
+  .spinner div.bar5 {{ transform: rotate(120deg); animation-delay: -0.667s; }}
+  .spinner div.bar6 {{ transform: rotate(150deg); animation-delay: -0.5837s; }}
+  .spinner div.bar7 {{ transform: rotate(180deg); animation-delay: -0.5s; }}
+  .spinner div.bar8 {{ transform: rotate(210deg); animation-delay: -0.4167s; }}
+  .spinner div.bar9 {{ transform: rotate(240deg); animation-delay: -0.333s; }}
+  .spinner div.bar10 {{ transform: rotate(270deg); animation-delay: -0.2497s; }}
+  .spinner div.bar11 {{ transform: rotate(300deg); animation-delay: -0.167s; }}
+  .spinner div.bar12 {{ transform: rotate(330deg); animation-delay: -0.0833s; }}
+</style>
+
         </head>
         <body>
-            <div class="container">
-                <div class="loader"></div>
+            <div class="spinner">
+              <div class="bar1"></div>
+              <div class="bar2"></div>
+              <div class="bar3"></div>
+              <div class="bar4"></div>
+              <div class="bar5"></div>
+              <div class="bar6"></div>
+              <div class="bar7"></div>
+              <div class="bar8"></div>
+              <div class="bar9"></div>
+              <div class="bar10"></div>
+              <div class="bar11"></div>
+              <div class="bar12"></div>
             </div>
         </body>
         </html>
@@ -110,3 +107,6 @@ class LoadingScreen(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.web_view, alignment=Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
+
+
+        

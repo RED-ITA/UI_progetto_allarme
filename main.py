@@ -10,6 +10,7 @@ from API.DB import (
     API_generale as db, 
     API_ui as db_api,
 )
+from OBJ import OBJ_UI_Sensore as o
 
 from CMP import header as h 
 from PAGE import (
@@ -20,10 +21,16 @@ from PAGE import (
      sensori_page as sensori, 
      tastierino_dialog as tastierino
 )
+import threading
 
 class MainWindows(QMainWindow):
+    signal_sensor_data_loaded = pyqtSignal(o.Sensore, int)  # Passa i dati del sensore e la sensor_pk
+    signal_sensor_saved = pyqtSignal(bool)  # Segnale per indicare il completamento del salvataggio del sensore
 
     def __init__(self):
+        # Dentro la classe Sensori_Page
+        
+
         db.create_db()
         super().__init__()
         log.setup_logger()
@@ -59,12 +66,12 @@ class MainWindows(QMainWindow):
             self.main_layout.addWidget(impo_page)
 
             # PAGINA index 2
-            senso_page = sensori.Sensori_Page(self, self.header)
-            self.main_layout.addWidget(senso_page)
+            self.senso_page = sensori.Sensori_Page(self, self.header)
+            self.main_layout.addWidget(self.senso_page)
 
             # Connetti i segnali di senso_page
-            senso_page.signal_add_sensor.connect(self.open_add_sensor_page)
-            senso_page.signal_edit_sensor.connect(self.open_edit_sensor_page)
+            self.senso_page.signal_add_sensor.connect(self.open_add_sensor_page)
+            self.senso_page.signal_edit_sensor.connect(self.open_edit_sensor_page)
 
             # PAGINA index 3
             stanze_page = stanze.Stanze_Page(self, self.header)
@@ -83,6 +90,9 @@ class MainWindows(QMainWindow):
             # Connetti i segnali del form del sensore
             self.sensor_form_page.signal_back.connect(self.back_to_sensors_page)
             self.sensor_form_page.signal_save_sensor.connect(self.save_sensor_data)
+            self.signal_sensor_saved.connect(self.handle_sensor_saved_ui_update)
+            self.signal_sensor_data_loaded.connect(self.on_sensors_loaded)
+
 
             self.super_layout.addWidget(self.main_layout)
 
@@ -140,10 +150,25 @@ class MainWindows(QMainWindow):
         # Modifica l'header se necessario
         self.header.set_tipo(5)  # Supponendo che il tipo 1 modifichi l'header
         # Carica i dati del sensore
-        sensor = db_api.get_sensor_by_pk(sensor_pk)
-        self.sensor_form_page.load_sensor_data(sensor)
-        # Imposta una variabile per indicare che stiamo modificando un sensore esistente
+        future = db_api.get_sensor_by_pk(sensor_pk)
+        future.add_done_callback(lambda fut: self.handle_sensor_loaded(fut, sensor_pk))
+
+    def handle_sensor_loaded(self, future, sensor_pk):
+        self._log_thread_info("handle_loadedSensor_completata")
+        try:
+            risult = future.result()
+            self.signal_sensor_data_loaded.emit(risult, sensor_pk)
+            log.log_file(1000, f"Sensor loaded: {risult}")
+            # Chiama la funzione on_sensors_loaded con il risultato e sensor_pk
+        except Exception as e:
+            log.log_file(404, f"{e}")
+
+    def on_sensors_loaded(self, result, sensor_pk):
+        # Carica i dati del sensore nella form di modifica
+        self.sensor_form_page.load_sensor_data(result)
+        # Imposta la modalità di modifica
         self.sensor_form_page.edit_mode = True
+        # Passa la primary key del sensore alla pagina di modifica
         self.sensor_form_page.sensor_pk = sensor_pk
         # Cambia pagina
         self.main_layout.setCurrentIndex(4)
@@ -154,42 +179,50 @@ class MainWindows(QMainWindow):
         self.main_layout.setCurrentIndex(2)
 
     def save_sensor_data(self, sensor_data):
-        if self.sensor_form_page.edit_mode:
-            # Modifica sensore esistente
-            sensor_pk = self.sensor_form_page.sensor_pk
-            result = db_api.edit_sensor(sensor_pk, (
-                sensor_data['Id'],
-                sensor_data['Tipo'],
-                sensor_data['Data'],
-                sensor_data['Stanza'],
-                sensor_data['Soglia'],
-                0  # Error field, set to 0 by default
-            ))
-            if result:
-                log.log_file(2007, f"Sensore {sensor_pk} modificato con successo.")
-            else:
-                log.log_file(2001, f"Errore nella modifica del sensore {sensor_pk}.")
+        future = db_api.edit_sensor(self.sensor_form_page.sensor_pk, (
+            sensor_data['Id'],
+            sensor_data['Tipo'],
+            sensor_data['Data'],
+            sensor_data['Stanza'],
+            sensor_data['Soglia'],
+            0  # Error field, set to 0 by default
+        )) if self.sensor_form_page.edit_mode else db_api.add_sensor((
+            sensor_data['Id'],
+            sensor_data['Tipo'],
+            sensor_data['Data'],
+            sensor_data['Stanza'],
+            sensor_data['Soglia'],
+            0  # Error field, set to 0 by default
+        ))
+        future.add_done_callback(lambda fut: self.handle_sensor_saved(fut))
+
+    def handle_sensor_saved(self, future):
+        try:
+            result = future.result()
+            success = bool(result)
+            self.signal_sensor_saved.emit(success)
+        except Exception as e:
+            log.log_file(404, f"{e}")
+            self.signal_sensor_saved.emit(False)
+
+    def handle_sensor_saved_ui_update(self, success):
+        if success:
+            log.log_file(2007 if self.sensor_form_page.edit_mode else 2005, "Sensore modificato con successo." if self.sensor_form_page.edit_mode else "Nuovo sensore aggiunto con successo.")
         else:
-            # Aggiungi nuovo sensore
-            result = db_api.add_sensor((
-                sensor_data['Id'],
-                sensor_data['Tipo'],
-                sensor_data['Data'],
-                sensor_data['Stanza'],
-                sensor_data['Soglia'],
-                0  # Error field, set to 0 by default
-            ))
-            if result:
-                log.log_file(2005, "Nuovo sensore aggiunto con successo.")
-            else:
-                log.log_file(2001, "Errore nell'aggiunta del nuovo sensore.")
+            log.log_file(2001, "Errore nella modifica del sensore." if self.sensor_form_page.edit_mode else "Errore nell'aggiunta del nuovo sensore.")
         # Torna alla pagina dei sensori e aggiorna la lista
         self.back_to_sensors_page()
         # Aggiorna la pagina dei sensori
-        senso_page = self.main_layout.widget(2)
-        senso_page.init_sensors()
-        senso_page.refresh_ui()
+        self.senso_page.init_sensors()
+        self.senso_page.refresh_ui()
             
+    
+    def _log_thread_info(self, function_name):
+        """Log thread information for diagnostics."""
+        current_thread = threading.current_thread()
+        log.log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
+        
+        
 
 
 if __name__ == "__main__":

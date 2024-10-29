@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QPushButton, QLabel, QLineEdit, QDialog, QDialogButtonBox
 from PyQt6.QtCore import QFile, QTextStream, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPixmap, QIcon
+import threading
 
 import sys
 
@@ -17,6 +18,8 @@ from OBJ import OBJ_UI_Sensore as o
 class Stanze_Page(QWidget):
 
     signal_sensor_clicked = pyqtSignal(int)
+    loaded_complet = pyqtSignal(list)
+    loaded_stanza = pyqtSignal(list)
 
     def __init__(self, master, header):
         super().__init__()
@@ -24,7 +27,8 @@ class Stanze_Page(QWidget):
         self.master = master
         self.master.setWindowTitle("Stanze e Sensori")
         self.header = header
-
+        self.loaded_complet.connect(self.stanze_load)
+        self.loaded_stanza.connect(self.stanza_load)
         self.main_layout = QHBoxLayout()
         self.initUI()
 
@@ -73,20 +77,37 @@ class Stanze_Page(QWidget):
 
         self.buttons = {}
 
-        stanze_data = db_api.get_all_stanze()
-        for stanza in stanze_data:
+        # Chiama in modo asincrono l'API per recuperare le stanze
+        future = db_api.get_all_stanze()
+        future.add_done_callback(self.handle_stanze_loaded)
+
+    def handle_stanze_loaded(self, future):
+        self._log_thread_info("handle_loadedRoom_completata")
+        try:
+            risult = future.result()
+            self.loaded_complet.emit(risult)
+            log_file(1000, str(risult))
+        except Exception as e:
+            log_file(404, f"{e}")
+
+    def stanze_load(self, risult):
+        
+        sensors_data = risult
+        self.buttons = {}
+        for stanza in sensors_data:
             button = QPushButton(stanza[0])
             button.setObjectName("stanza_button")
             button.setStyleSheet("text-align: left;")
-
             pixmap = QPixmap(f.get_img("stanza_nosel"))
             icon = QIcon(pixmap)
             button.setIcon(icon)
-
             button.clicked.connect(lambda checked, nome=stanza[0]: self.on_stanza_clicked(nome))
             self.v_layout_stanze.addWidget(button)
             self.buttons[stanza[0]] = button
         self.v_layout_stanze.addStretch()
+        log_file(1000, "Stanze caricate con successo")
+        
+        
 
     def on_stanza_clicked(self, stanza_nome):
         log_file(201, f"{stanza_nome}")
@@ -114,8 +135,21 @@ class Stanze_Page(QWidget):
     def populate_sensori(self, stanza_nome):
         log_file(202, f"{stanza_nome}")
         self.clear_layout(self.h_layout_sensori)
-        sensori_stanza = db_api.get_sensori_by_stanza(stanza_nome)
+        # Chiama in modo asincrono l'API per recuperare i sensori nella stanza
+        future = db_api.get_sensori_by_stanza(stanza_nome)
+        future.add_done_callback(self.handle_sensori_loaded)
 
+    def handle_sensori_loaded(self, future):
+        self._log_thread_info("handle_loadedSensor_completata")
+        try:
+            risult = future.result()
+            self.loaded_stanza.emit(risult)
+            log_file(1000, str(risult))
+        except Exception as e:
+            log_file(404, f"{e}")
+
+    def stanza_load(self, risult):
+        sensori_stanza = risult
         riga_superiore_layout = QHBoxLayout()
         riga_inferiore_layout = QHBoxLayout()
         self.h_layout_sensori.addLayout(riga_superiore_layout)
@@ -170,7 +204,7 @@ class Stanze_Page(QWidget):
         nome_stanza = self.nome_stanza_input.text().strip()
         if nome_stanza:
             log_file(204, f"{nome_stanza}")
-            result = db_api.add_stanza(nome_stanza)
+            result = db_api.add_stanza(nome_stanza) #todo
             if result:
                 log_file(2104, f"{nome_stanza}")
                 self.populate_stanze()
@@ -202,3 +236,10 @@ class Stanze_Page(QWidget):
             style_sheet = stream.readAll()
             file.close()
             self.setStyleSheet(style_sheet)
+
+    def _log_thread_info(self, function_name):
+        """Log thread information for diagnostics."""
+        current_thread = threading.current_thread()
+        log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
+        
+        
