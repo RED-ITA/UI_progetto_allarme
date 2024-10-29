@@ -36,7 +36,7 @@ class Sensore():
         self.Tipo = Tipo
         self.Data = Data
         self.Stanza = Stanza
-        self.Soglia = Soglia
+        self.Soglia = int(Soglia)
         if Error == 0:
             self.Error = False
         else:

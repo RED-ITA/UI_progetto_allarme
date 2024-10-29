@@ -6,14 +6,17 @@ from datetime import datetime
 from API.LOG import log_file
 from API.DB import API_ui as db
 from API import funzioni as f
+import threading
 
 class SensorFormPage(QWidget):
     signal_back = pyqtSignal()
     signal_save_sensor = pyqtSignal(dict)  # Passa i dati del sensore come dizionario
+    loaded_complet = pyqtSignal(list)
 
     def __init__(self, header):
         super().__init__()
         self.header = header
+        self.loaded_complet.connect(self.on_sensors_loaded)
         self.stanze_disponibili = []
         self.init_ui()
         self.load_stylesheet()
@@ -121,7 +124,7 @@ class SensorFormPage(QWidget):
     def on_add_stanza_clicked(self):
         nome_stanza, ok = QInputDialog.getText(self, "Aggiungi Stanza", "Inserisci il nome della nuova stanza:")
         if ok and nome_stanza:
-            if db.add_stanza(nome_stanza):
+            if db.add_stanza(nome_stanza): #todo
                 log_file(2104, f"{nome_stanza}")
                 self.reload_stanze()
             else:
@@ -142,7 +145,20 @@ class SensorFormPage(QWidget):
     def reload_stanze(self):
         log_file(200)
         # Ricarica le stanze dal database e aggiorna la combobox
-        self.stanze_disponibili = db.get_all_stanze()
+        future = db.get_all_stanze()
+        future.add_done_callback(self.handle_sensor_loaded)
+
+    def handle_sensor_loaded(self, future):
+        self._log_thread_info("handle_loadedSensor_completata")
+        try:
+            risult = future.result()
+            self.loaded_complet.emit(risult)
+            log_file(1000, str(risult))
+        except Exception as e:
+            log_file(404, f"{e}")
+
+    def on_sensors_loaded(self, result):
+        self.stanze_disponibili = result
         self.stanza_field.clear()
         if self.stanze_disponibili:
             self.stanza_field.addItems([stanza[0] for stanza in self.stanze_disponibili])
@@ -159,3 +175,10 @@ class SensorFormPage(QWidget):
         self.reload_stanze()
 
         print(self.stanza_field.itemText(0))
+
+    def _log_thread_info(self, function_name):
+        """Log thread information for diagnostics."""
+        current_thread = threading.current_thread()
+        log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
+        
+        
