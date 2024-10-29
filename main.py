@@ -10,6 +10,8 @@ from API.DB import (
     API_generale as db, 
     API_ui as db_api,
 )
+
+from API.DB.queue_manager import init_db_manager, db_enqueue
 from OBJ import OBJ_UI_Sensore as o
 
 from CMP import header as h 
@@ -34,7 +36,7 @@ class MainWindows(QMainWindow):
         db.create_db()
         super().__init__()
         log.setup_logger()
-        
+        db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
         self.setWindowTitle("ALLARME APP")
         screen_geometry = QApplication.primaryScreen().geometry()
         self.screen_width = screen_geometry.width()

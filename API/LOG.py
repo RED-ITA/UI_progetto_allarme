@@ -205,6 +205,24 @@ log_messages = {
     2408: ('ERROR', 'Errore salvataggio di accensione'),
     2409: ('ERROR', 'Errore salvataggio di spegnimento'),
     2410: ('ERROR', 'Errore richiesta sensori stanze'),
+
+     # Log operativi delle schede
+    2600: ('SUCCESS', "Inizio creazione schede, se non già presenti."),
+    2601: ('SUCCESS', "Scheda creata nella tabella IMPOSTAZIONI."),
+    2602: ('SUCCESS', "Scheda creata nella tabella PARAMETRI."),
+    2603: ('SUCCESS', "Scheda creata nella tabella VALUE."),
+    2604: ('INFO', "Scheda già presente nel database."),
+    2605: ('INFO', "DBWorkerThread terminato."),
+    2606: ('INFO', "Interruzione di DBWorkerThread..."),
+    2607: ('INFO', "DBWorkerThread interrotto."),
+    2608: ('INFO', "Log delle esecuzioni pulito."),
+    2609: ('INFO', "Log delle esecuzioni richiesto."),
+    2610: ('INFO', "tara: "),
+    2611: ('INFO', "calibrazione: "),
+    
+    2500: ('INFO', "Richiesta l'operazione: "),
+    2501: ('INFO', "Messa in coda"),
+    2502: ('INFO', "Gestita ora"),
     # WARNING
 
     # THREAD messages
