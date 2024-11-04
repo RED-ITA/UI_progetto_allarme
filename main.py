@@ -10,6 +10,7 @@ from API.DB import (
     API_generale as db, 
     API_ui as db_api,
 )
+from API.DB.web_server import run_flask_app
 
 from API.DB.queue_manager import init_db_manager, db_enqueue, db_stop
 from OBJ import OBJ_UI_Sensore as o
@@ -234,6 +235,12 @@ class MainWindows(QMainWindow):
 
 
 if __name__ == "__main__":
+
+    # Avvia il server Flask in un thread separato
+    flask_thread = threading.Thread(target=run_flask_app)
+    flask_thread.daemon = True  # Termina il thread quando l'app principale si chiude
+    flask_thread.start()
+
     app = QApplication(sys.argv)
     window = MainWindows()
     window.show()

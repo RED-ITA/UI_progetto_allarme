@@ -13,6 +13,8 @@ from API.DB.API_ui import (
     insert_activity,
     update_activity_shutdown
 )
+import sqlite3
+import API.funzioni as f
 
 app = Flask(__name__)
 
@@ -20,39 +22,43 @@ app = Flask(__name__)
 def row_to_dict(row):
     return dict(zip(row.keys(), row))
 
-@app.route('/sensors', methods=['GET', 'POST'])
-def sensors():
-    if request.method == 'GET':
-        # Get the future object
-        future = get_all_sensori()
-        # Wait for the result
-        sensori = future.result()
-        sensori_list = [row_to_dict(row) for row in sensori]
-        return jsonify(sensori_list)
-    elif request.method == 'POST':
-        sensor_data = request.get_json()
-        if not sensor_data:
-            return jsonify({'error': 'Invalid data'}), 400
-        parameters = (
-            sensor_data.get('Tipo'),
-            sensor_data.get('Data'),
-            sensor_data.get('Stanza'),
-            sensor_data.get('Soglia'),
-            sensor_data.get('Error'),
-        )
-        # Call the function and get the future
-        future = add_sensor(parameters)
-        # Wait for the result
-        result = future.result()
-        if result == 1:
-            return jsonify({'result': 'Sensor added successfully'}), 201
-        else:
-            return jsonify({'error': 'Failed to add sensor'}), 500
+
+@app.route('/sensors', methods=['POST'])
+def add_new_sensor():
+    sensor_data = request.get_json()
+    if not sensor_data:
+        return jsonify({'error': 'Invalid data'}), 400
+
+    # Aggiungi i dati necessari con una tupla
+    parameters = (
+        sensor_data.get('Tipo'),
+        sensor_data.get('Data'),
+        sensor_data.get('Stanza'),
+        sensor_data.get('Soglia'),
+        sensor_data.get('Error')
+    )
+
+    # Ottieni il future dell'aggiunta del sensore
+    future = add_sensor(parameters)
+    result = future.result()
+
+    if result == 1:  # Successo
+        # Ottieni la pk del sensore appena aggiunto
+        conn = sqlite3.connect(f.get_db())
+        try:
+            c = conn.cursor()
+            c.execute('SELECT last_insert_rowid()')
+            pk = c.fetchone()[0]
+            return jsonify({'result': 'Sensor added successfully', 'pk': pk})
+        finally:
+            conn.close()
+    else:
+        return jsonify({'error': 'Failed to add sensor'}), 500
 
 @app.route('/sensors/<int:sensor_pk>', methods=['GET', 'PUT', 'DELETE'])
 def sensor(sensor_pk):
     if request.method == 'GET':
-        # Get the future object
+        # Get the future object  
         future = get_sensor_by_pk(sensor_pk)
         # Wait for the result
         sensor = future.result()
@@ -65,7 +71,6 @@ def sensor(sensor_pk):
         if not new_data:
             return jsonify({'error': 'Invalid data'}), 400
         parameters = (
-            new_data.get('Id'),
             new_data.get('Tipo'),
             new_data.get('Data'),
             new_data.get('Stanza'),
@@ -90,91 +95,10 @@ def sensor(sensor_pk):
         else:
             return jsonify({'error': 'Failed to delete sensor'}), 500
 
-@app.route('/stanze', methods=['GET', 'POST'])
-def stanze():
-    if request.method == 'GET':
-        # Get the future
-        future = get_all_stanze()
-        # Wait for the result
-        stanze = future.result()
-        stanze_list = [row_to_dict(row) for row in stanze]
-        return jsonify(stanze_list)
-    elif request.method == 'POST':
-        data = request.get_json()
-        if not data or 'Nome' not in data:
-            return jsonify({'error': 'Invalid data'}), 400
-        nome_stanza = data['Nome']
-        # Get the future
-        future = add_stanza(nome_stanza)
-        # Wait for the result
-        result = future.result()
-        if result == 1:
-            return jsonify({'result': 'Stanza added successfully'}), 201
-        else:
-            return jsonify({'error': 'Failed to add stanza'}), 500
 
-@app.route('/stanze/<stanza_nome>/sensors', methods=['GET'])
-def sensori_by_stanza(stanza_nome):
-    # Get the future
-    future = get_sensori_by_stanza(stanza_nome)
-    # Wait for the result
-    sensori = future.result()
-    sensori_list = [row_to_dict(row) for row in sensori]
-    return jsonify(sensori_list)
 
-@app.route('/logs', methods=['GET'])
-def logs():
-    # Get the future
-    future = get_all_logs()
-    # Wait for the result
-    logs = future.result()
-    logs_list = [row_to_dict(row) for row in logs]
-    return jsonify(logs_list)
-
-@app.route('/forzatura', methods=['POST'])
-def forzatura():
-    data = request.get_json()
-    if not data or 'Data' not in data:
-        return jsonify({'error': 'Invalid data'}), 400
-    data_value = data['Data']
-    # Get the future
-    future = aggiungi_forzatura(data_value)
-    # Wait for the result
-    result = future.result()
-    if result == 1:
-        return jsonify({'result': 'Forzatura added successfully'}), 201
-    else:
-        return jsonify({'error': 'Failed to add forzatura'}), 500
-
-@app.route('/activity', methods=['POST'])
-def activity():
-    data = request.get_json()
-    if not data or 'DataA' not in data:
-        return jsonify({'error': 'Invalid data'}), 400
-    data_a = data['DataA']
-    # Get the future
-    future = insert_activity(data_a)
-    # Wait for the result
-    result = future.result()
-    if result == 1:
-        return jsonify({'result': 'Activity added successfully'}), 201
-    else:
-        return jsonify({'error': 'Failed to add activity'}), 500
-
-@app.route('/activity/<int:log_id>', methods=['PUT'])
-def update_activity(log_id):
-    data = request.get_json()
-    if not data or 'DataS' not in data:
-        return jsonify({'error': 'Invalid data'}), 400
-    data_s = data['DataS']
-    # Get the future
-    future = update_activity_shutdown(log_id, data_s)
-    # Wait for the result
-    result = future.result()
-    if result == 1:
-        return jsonify({'result': 'Activity updated successfully'})
-    else:
-        return jsonify({'error': 'Failed to update activity'}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True)
+def run_flask_app():
+    app.run(host='0.0.0.0', port=5000, debug=True,  use_reloader=False)
+    """
+    C:\Users\psalv>curl -X POST http://192.168.1.41:5000/sensors -H "Content-Type: application/json" -d "{\"Tipo\": 1, \"Data\": \"2024-11-04\", \"Stanza\": \"Salone\", \"Soglia\": 25.5, \"Error\": 0}"
+    """
