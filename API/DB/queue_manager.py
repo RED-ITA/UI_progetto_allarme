@@ -1,7 +1,7 @@
 import sqlite3
 import threading
 import time
-from queue import PriorityQueue
+from queue import PriorityQueue, Empty
 from functools import wraps
 from concurrent.futures import Future, ThreadPoolExecutor
 from API.LOG import log_file
@@ -25,18 +25,27 @@ class DBRequestManager:
     def enqueue_request(self, priority, func, *args, **kwargs):
         # Crea un Future per gestire il risultato e aggiungere la richiesta alla coda
         future = self.executor.submit(self.process_single_request, priority, func, *args, **kwargs)
-        log_file(2501, f"Funzione {func.__name__} messa in coda con priorità {priority}, args: {args}")
+        if func:
+            log_file(2501, f"Funzione {func.__name__} messa in coda con priorità {priority}, args: {args}")
         return future
 
     def process_requests(self):
         log_file(2605)  # Inizio del thread
         while not self.stop_event.is_set():
-            priority, _, func, args, kwargs, future = self.queue.get()
-            self.process_single_request(priority, func, *args, **kwargs)
-            self.queue.task_done()
+            try:
+                priority, _, func, args, kwargs, future = self.queue.get(timeout=1)
+                if func is None:
+                    break  # Esci dal ciclo se viene trovato un elemento fittizio per chiudere
+                self.process_single_request(priority, func, *args, **kwargs)
+                self.queue.task_done()
+            except Empty:
+                continue  # Continua se la coda è vuota, controllando l'evento di stop
         log_file(2607)  # Fine del thread
 
     def process_single_request(self, priority, func, *args, **kwargs):
+        if func is None:
+            return  # Evita di eseguire None come funzione
+
         with self.lock:
             error_occurred = False
             for attempt in range(10):
@@ -68,11 +77,12 @@ class DBRequestManager:
                     raise
                 except Exception as e:
                     error_occurred = True
-                    log_file(2005, f"{func.__name__} errore : {e}")
+                    func_name = func.__name__ if func else 'Funzione Non Valida'
+                    log_file(2005, f"{func_name} errore : {e}")
                     raise
             if error_occurred:
-                raise RuntimeError(f"Operazione non completata per {func.__name__}")
-    
+                raise RuntimeError(f"Operazione non completata per {func.__name__ if func else 'Funzione Non Valida'}")
+
     def stop(self):
         log_file(2606)  # Interruzione richiesta del thread
         self.stop_event.set()
@@ -84,7 +94,7 @@ class DBRequestManager:
     def clear_execution_log(self):
         log_file(2608)  # Pulizia del log delle esecuzioni
         self.execution_log.clear()
-        
+
     def get_execution_log(self):
         log_file(2609)  # Richiesta del log delle esecuzioni
         return self.execution_log
@@ -106,11 +116,12 @@ def db_enqueue(priority=2):
         def wrapper(*args, **kwargs):
             log_file(2501, f"Funzione {func.__name__} messa in coda con priorità {priority}")
             future = db_manager.enqueue_request(priority, func, *args, **kwargs)
-        
+
             return future  # Restituisce il Future per il completamento
         return wrapper
     return decorator
 
 def db_stop():
     global db_manager
-    db_manager.stop()
+    if db_manager is not None:
+        db_manager.stop()
