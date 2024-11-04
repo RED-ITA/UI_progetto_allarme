@@ -16,7 +16,7 @@ class Sensore():
         |-------------------|
     """
     
-    def __init__(self, SensorePk, Id, Tipo, Data, Stanza, Soglia, Error, Stato, parent=None) -> None:
+    def __init__(self, SensorePk, Tipo, Data, Stanza, Soglia, Error, Stato, parent=None) -> None:
         """OGGETTO SENSORE
 
         Args:
@@ -32,7 +32,6 @@ class Sensore():
         """        
 
         self.SensorePk = SensorePk #pk db del sensore in questione
-        self.Id = Id
         self.Tipo = Tipo
         self.Data = Data
         self.Stanza = Stanza

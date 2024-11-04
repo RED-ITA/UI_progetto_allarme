@@ -80,13 +80,12 @@ class Sensori_Page(QWidget):
                 # Crea l'oggetto Sensore con i dati dal database
                 sensor = o.Sensore(
                     SensorePk=data[0],
-                    Id=data[1],
-                    Tipo=data[2],
-                    Data=data[3],
-                    Stanza=data[4],
-                    Soglia=data[5],
-                    Error=data[6],
-                    Stato=data[7]
+                    Tipo=data[1],
+                    Data=data[2],
+                    Stanza=data[3],
+                    Soglia=data[4],
+                    Error=data[5],
+                    Stato=data[6]
                 )
                 self.lista_sensori.append(sensor)
             log_file(1000, "loaded ended")

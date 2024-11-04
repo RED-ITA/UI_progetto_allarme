@@ -159,13 +159,12 @@ class Stanze_Page(QWidget):
             riga_layout = riga_superiore_layout if index % 2 == 0 else riga_inferiore_layout
             sensore = o.Sensore(
                 SensorePk=sensor_data[0],
-                Id=sensor_data[1],
-                Tipo=sensor_data[2],
-                Data=sensor_data[3],
-                Stanza=sensor_data[4],
-                Soglia=sensor_data[5],
-                Error=sensor_data[6],
-                Stato=sensor_data[7]
+                Tipo=sensor_data[1],
+                Data=sensor_data[2],
+                Stanza=sensor_data[3],
+                Soglia=sensor_data[4],
+                Error=sensor_data[5],
+                Stato=sensor_data[6]
             )
             sensore_widget = w.QWidgetSensore(sensore)
             sensore_widget.setObjectName("sensore")

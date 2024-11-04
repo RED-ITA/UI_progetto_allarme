@@ -19,7 +19,6 @@ def create_db():
             # Create the SENSORI table
             c.execute('''CREATE TABLE IF NOT EXISTS SENSORI (
                             SensorPk INTEGER PRIMARY KEY AUTOINCREMENT,
-                            Id INTEGER, 
                             Tipo INTEGER, 
                             Data TEXT, 
                             Stanza TEXT, 

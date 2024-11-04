@@ -11,7 +11,7 @@ from API.DB import (
     API_ui as db_api,
 )
 
-from API.DB.queue_manager import init_db_manager, db_enqueue
+from API.DB.queue_manager import init_db_manager, db_enqueue, db_stop
 from OBJ import OBJ_UI_Sensore as o
 
 from CMP import header as h 
@@ -25,18 +25,20 @@ from PAGE import (
 )
 import threading
 
+
+
 class MainWindows(QMainWindow):
     signal_sensor_data_loaded = pyqtSignal(o.Sensore, int)  # Passa i dati del sensore e la sensor_pk
     signal_sensor_saved = pyqtSignal(bool)  # Segnale per indicare il completamento del salvataggio del sensore
 
     def __init__(self):
         # Dentro la classe Sensori_Page
-        
-
-        db.create_db()
         super().__init__()
+        db.create_db()
+
         log.setup_logger()
         db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
+
         self.setWindowTitle("ALLARME APP")
         screen_geometry = QApplication.primaryScreen().geometry()
         self.screen_width = screen_geometry.width()
@@ -47,6 +49,13 @@ class MainWindows(QMainWindow):
         
         self.create_layout()
         self.inizializzaUI()
+
+    def closeEvent(self, event):
+        # Chiamata a db_stop prima di chiudere l'applicazione
+        db_stop()
+        log.log_file(2701, "Chiusura dell'applicazione gestita correttamente")
+        # Continua con l'evento di chiusura standard
+        event.accept()
         
     def create_layout(self):
         try:
@@ -138,7 +147,6 @@ class MainWindows(QMainWindow):
         # Modifica l'header se necessario
         self.header.set_tipo(4)  # Supponendo che il tipo 1 modifichi l'header
         # Pulisci i campi del form
-        self.sensor_form_page.id_field.clear()
         self.sensor_form_page.tipo_field.setCurrentIndex(0)
         self.sensor_form_page.data_field.clear()
         self.sensor_form_page.stanza_field.clear()
@@ -182,14 +190,12 @@ class MainWindows(QMainWindow):
 
     def save_sensor_data(self, sensor_data):
         future = db_api.edit_sensor(self.sensor_form_page.sensor_pk, (
-            sensor_data['Id'],
             sensor_data['Tipo'],
             sensor_data['Data'],
             sensor_data['Stanza'],
             sensor_data['Soglia'],
             0  # Error field, set to 0 by default
         )) if self.sensor_form_page.edit_mode else db_api.add_sensor((
-            sensor_data['Id'],
             sensor_data['Tipo'],
             sensor_data['Data'],
             sensor_data['Stanza'],
@@ -232,4 +238,8 @@ if __name__ == "__main__":
     window = MainWindows()
     window.show()
 
+    #app.aboutToQuit.connect(db_stop)
+
+
     sys.exit(app.exec())
+   

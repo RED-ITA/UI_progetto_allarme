@@ -22,8 +22,8 @@ def add_sensor(sensor_data):
     try:
         c = conn.cursor()
         parameters = sensor_data + (1,)  # Aggiunge Stato = 1
-        c.execute('''INSERT INTO SENSORI (Id, Tipo, Data, Stanza, Soglia, Error, Stato) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''', parameters)
+        c.execute('''INSERT INTO SENSORI (Tipo, Data, Stanza, Soglia, Error, Stato) 
+                     VALUES (?, ?, ?, ?, ?, ?)''', parameters)
         
         c.execute('''UPDATE SISTEMA 
                      SET Aggiorna = ?
@@ -41,7 +41,7 @@ def edit_sensor(sensor_id, new_data):
     try:
         c = conn.cursor()
         c.execute('''UPDATE SENSORI 
-                     SET Id = ?, Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
+                     SET Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
                      WHERE SensorPk = ?''', (*new_data, sensor_id))
         
         c.execute('''UPDATE SISTEMA 
@@ -128,13 +128,12 @@ def get_sensor_by_pk(sensor_pk):
             log_file(2100)
             sensor = o.Sensore(
                 SensorePk=data[0],
-                Id=data[1],
-                Tipo=data[2],
-                Data=data[3],
-                Stanza=data[4],
-                Soglia=data[5],
-                Error=data[6],
-                Stato=data[7]
+                Tipo=data[1],
+                Data=data[2],
+                Stanza=data[3],
+                Soglia=data[4],
+                Error=data[5],
+                Stato=data[6]
             )
             return sensor
         else:

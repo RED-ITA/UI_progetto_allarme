@@ -76,7 +76,8 @@ class DBRequestManager:
     def stop(self):
         log_file(2606)  # Interruzione richiesta del thread
         self.stop_event.set()
-        self.worker_thread.join()
+        self.queue.put((float('inf'), None, None, (), {}, None))  # Elemento fittizio per sbloccare `queue.get()`
+        self.worker_thread.join()  # Assicurati che il thread principale termini
         self.executor.shutdown(wait=True)
         log_file(2607)  # Thread interrotto
 
@@ -109,3 +110,7 @@ def db_enqueue(priority=2):
             return future  # Restituisce il Future per il completamento
         return wrapper
     return decorator
+
+def db_stop():
+    global db_manager
+    db_manager.stop()

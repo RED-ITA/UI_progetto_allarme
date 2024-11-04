@@ -34,7 +34,6 @@ def sensors():
         if not sensor_data:
             return jsonify({'error': 'Invalid data'}), 400
         parameters = (
-            sensor_data.get('Id'),
             sensor_data.get('Tipo'),
             sensor_data.get('Data'),
             sensor_data.get('Stanza'),
