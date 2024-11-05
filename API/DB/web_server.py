@@ -1,3 +1,10 @@
+# Importa le librerie necessarie per gevent
+from flask_socketio import SocketIO, emit
+
+import gevent
+import gevent.monkey
+#gevent.monkey.patch_all()
+
 from flask import Flask, request, jsonify
 from API.DB.API_ui import (
     add_sensor,
@@ -16,7 +23,23 @@ from API.DB.API_ui import (
 import sqlite3
 import API.funzioni as f
 
+
+
+import engineio
+import socketio
+
+
 app = Flask(__name__)
+
+# Imposta l'async_mode su 'gevent'
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+#
+
+# Evento per notificare l'UI che il processo Modbus ha aggiornato i parametri
+def notify_ui_update(tipo):
+    print("Emettendo evento process_to_ui_update con tipo:", tipo)
+    socketio.emit('process_to_ui_update', {"type": tipo})
+
 
 # Helper function to convert sqlite3.Row objects to dictionaries
 def row_to_dict(row):
@@ -49,6 +72,7 @@ def add_new_sensor():
             c = conn.cursor()
             c.execute('SELECT last_insert_rowid()')
             pk = c.fetchone()[0]
+            notify_ui_update("nuovo")
             return jsonify({'result': 'Sensor added successfully', 'pk': pk})
         finally:
             conn.close()
@@ -96,9 +120,9 @@ def sensor(sensor_pk):
             return jsonify({'error': 'Failed to delete sensor'}), 500
 
 
-
 def run_flask_app():
-    app.run(host='0.0.0.0', port=5000, debug=True,  use_reloader=False)
-    """
-    C:\Users\psalv>curl -X POST http://192.168.1.41:5000/sensors -H "Content-Type: application/json" -d "{\"Tipo\": 1, \"Data\": \"2024-11-04\", \"Stanza\": \"Salone\", \"Soglia\": 25.5, \"Error\": 0}"
-    """
+    print("avvio")
+    socketio.run(app, host='0.0.0.0', port=5001)
+
+
+

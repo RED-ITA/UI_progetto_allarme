@@ -21,7 +21,7 @@ def add_sensor(sensor_data):
     conn = sqlite3.connect(f.get_db())
     try:
         c = conn.cursor()
-        parameters = sensor_data + (1,)  # Aggiunge Stato = 1
+        parameters = sensor_data + (0,)  # Aggiunge Stato = 1
         c.execute('''INSERT INTO SENSORI (Tipo, Data, Stanza, Soglia, Error, Stato) 
                      VALUES (?, ?, ?, ?, ?, ?)''', parameters)
         

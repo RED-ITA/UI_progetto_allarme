@@ -1,5 +1,5 @@
 from PyQt6.QtGui import  QColor
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QThread
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
 
 import os
@@ -25,7 +25,26 @@ from PAGE import (
      tastierino_dialog as tastierino
 )
 import threading
+import socketio
+import time
 
+class WebSocketListener(QThread):
+    update_received = pyqtSignal(dict)
+    
+    def __init__(self):
+        super().__init__()
+        self.sio = socketio.Client()
+
+    def run(self):
+        self.sio.connect('http://localhost:5001', wait_timeout=10)
+        self.sio.on('process_to_ui_update', self.on_update_from_api)
+        self.sio.on('connect_error', lambda: print("Errore di connessione"))
+        self.sio.on('disconnect', lambda: print("Disconnesso"))
+
+
+    def on_update_from_api(self, data):
+        print("Aggiornamento ricevuto dall'API:", data)
+        self.update_received.emit(data)  # Emetti il segnale con i dati ricevuti
 
 
 class MainWindows(QMainWindow):
@@ -35,10 +54,17 @@ class MainWindows(QMainWindow):
     def __init__(self):
         # Dentro la classe Sensori_Page
         super().__init__()
-        db.create_db()
+        
 
         log.setup_logger()
         db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
+
+        self.listener = WebSocketListener()
+
+        # Collega il segnale update_received al metodo handle_update
+        self.listener.update_received.connect(self.handle_update)
+
+        self.listener.start()
 
         self.setWindowTitle("ALLARME APP")
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -50,6 +76,12 @@ class MainWindows(QMainWindow):
         
         self.create_layout()
         self.inizializzaUI()
+
+    def handle_update(self, data):
+        # Aggiorna la UI o gestisci i dati in modo thread-safe
+        self.senso_page.init_sensors()
+        self.senso_page.refresh_ui()
+        # Inserisci il codice per aggiornare la UI o i componenti qui
 
     def closeEvent(self, event):
         # Chiamata a db_stop prima di chiudere l'applicazione
@@ -235,11 +267,13 @@ class MainWindows(QMainWindow):
 
 
 if __name__ == "__main__":
-
+    db.create_db()
     # Avvia il server Flask in un thread separato
     flask_thread = threading.Thread(target=run_flask_app)
     flask_thread.daemon = True  # Termina il thread quando l'app principale si chiude
     flask_thread.start()
+
+    time.sleep(10)
 
     app = QApplication(sys.argv)
     window = MainWindows()
