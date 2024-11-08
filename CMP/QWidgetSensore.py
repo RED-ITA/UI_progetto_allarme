@@ -75,24 +75,22 @@ class QWidgetSensore(QWidget):
         self.layout1.addLayout(h0)
         self.layout1.addLayout(h1)
         
-        if obj.Stato:
-            h2 = QHBoxLayout()
-            self.p1 = p.QPushButtonBadge("parametri.png", color="DEDEDE")
-            self.p1.setFixedSize(75,75)
-            self.p2 = p.QPushButtonBadge("cestino.png", color="DEDEDE")
-            self.p2.setFixedSize(75,75)
-
-             # Connetti i pulsanti ai segnali
-            self.p1.clicked.connect(self.emit_parametri_signal)
-            self.p2.clicked.connect(self.emit_cestino_signal)
-
-            h2.addSpacing(10)
-            h2.addWidget(self.p1)
-            h2.addStretch()
-            h2.addWidget(self.p2)
-            h2.addSpacing(10)
         
-            self.layout1.addLayout(h2)
+        h2 = QHBoxLayout()
+        self.p1 = p.QPushButtonBadge("parametri.png", color="DEDEDE")
+        self.p1.setFixedSize(75,75)
+        self.p2 = p.QPushButtonBadge("cestino.png", color="DEDEDE")
+        self.p2.setFixedSize(75,75)
+        # Connetti i pulsanti ai segnali
+        self.p1.clicked.connect(self.emit_parametri_signal)
+        self.p2.clicked.connect(self.emit_cestino_signal)
+        h2.addSpacing(10)
+        h2.addWidget(self.p1)
+        h2.addStretch()
+        h2.addWidget(self.p2)
+        h2.addSpacing(10)
+    
+        self.layout1.addLayout(h2)
 
         wid = QWidget()
         wid.setLayout(self.layout1)

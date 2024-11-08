@@ -4,7 +4,7 @@ from flask_socketio import SocketIO, emit
 import gevent
 import gevent.monkey
 #gevent.monkey.patch_all()
-
+from datetime import datetime
 from flask import Flask, request, jsonify
 from API.DB.API_ui import (
     add_sensor,
@@ -52,14 +52,18 @@ def add_new_sensor():
     if not sensor_data:
         return jsonify({'error': 'Invalid data'}), 400
 
-    # Aggiungi i dati necessari con una tupla
-    parameters = (
-        sensor_data.get('Tipo'),
-        sensor_data.get('Data'),
-        sensor_data.get('Stanza'),
-        sensor_data.get('Soglia'),
-        sensor_data.get('Error')
-    )
+    # Verifica che il tipo sia presente
+    tipo = sensor_data.get('Tipo')
+    if not tipo:
+        return jsonify({'error': 'Tipo is required'}), 400
+
+    # Aggiungi i dati necessari con valori di default
+    data = sensor_data.get('Data', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    stanza = sensor_data.get('Stanza', "")
+    soglia = sensor_data.get('Soglia', 0)
+    error = sensor_data.get('Error', 0)
+
+    parameters = (tipo, data, stanza, soglia, error)
 
     # Ottieni il future dell'aggiunta del sensore
     future = add_sensor(parameters)
@@ -123,6 +127,4 @@ def sensor(sensor_pk):
 def run_flask_app():
     print("avvio")
     socketio.run(app, host='0.0.0.0', port=5001)
-
-
 

@@ -60,9 +60,8 @@ def delete_sensor(sensor_pk):
     try:
         c = conn.cursor()
         # Mark sensor as inactive
-        c.execute('''UPDATE SENSORI 
-                     SET Stato = ? 
-                     WHERE SensorPk = ?''', (0, sensor_pk))
+        c.execute('''DELETE FROM SENSORI 
+                     WHERE SensorPk = ?''', (sensor_pk,))
         
         c.execute('''UPDATE SISTEMA 
                      SET Aggiorna = ? 
