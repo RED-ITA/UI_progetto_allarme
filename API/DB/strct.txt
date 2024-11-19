@@ -41,3 +41,17 @@
 |-------------------|
 |  Nome             |    TEXT (Primary Key)  -- Room name, unique identifier for the room
 |-------------------|
+
+
+API COMMAND
+    C:\Users\psalv>curl -X POST http://127.0.0.1:5001/sensor -H "Content-Type: application/json" -d "{\"tipo\": 0}"
+    {"sensor_id":6,"success":true}
+    
+    C:\Users\psalv>curl http://127.0.0.1:5001/sensor/4
+    {"sensor":[{"Data":"2024-11-19 20:15:26","Error":0,"SensorPk":4,"Soglia":50,"Stanza":"Senza stanza","Stato":1,"Tipo":0}]}
+    
+    C:\Users\psalv>curl -X POST http://127.0.0.1:5001/sensor/value -H "Content-Type: application/json" -d "{\"sensor_pk\": 4, \"value\": 100, \"allarme\": 1}"
+    {"success":true}
+    
+    C:\Users\psalv>
+  

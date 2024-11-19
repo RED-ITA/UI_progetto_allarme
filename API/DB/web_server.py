@@ -6,19 +6,12 @@ import gevent.monkey
 #gevent.monkey.patch_all()
 from datetime import datetime
 from flask import Flask, request, jsonify
-from API.DB.API_ui import (
-    add_sensor,
-    edit_sensor,
-    delete_sensor,
-    get_all_stanze,
-    get_all_sensori,
-    get_all_logs,
-    get_sensor_by_pk,
-    add_stanza,
-    get_sensori_by_stanza,
-    aggiungi_forzatura,
-    insert_activity,
-    update_activity_shutdown
+
+
+from API.DB.API_bg import (
+    add_sensor, 
+    add_value, 
+    get_sensor
 )
 import sqlite3
 import API.funzioni as f
@@ -27,6 +20,7 @@ import API.funzioni as f
 
 import engineio
 import socketio
+
 
 
 app = Flask(__name__)
@@ -45,86 +39,65 @@ def notify_ui_update(tipo):
 def row_to_dict(row):
     return dict(zip(row.keys(), row))
 
+@app.route('/sensor', methods=['POST'])
+def create_sensor():
+    """
+    Aggiunge un nuovo sensore con valori di default.
+    Richiede: {"tipo": <int>}
+    """
+    data = request.json
+    if not data or 'tipo' not in data:
+        return jsonify({"error": "Tipo non fornito"}), 400
 
-@app.route('/sensors', methods=['POST'])
-def add_new_sensor():
-    sensor_data = request.get_json()
-    if not sensor_data:
-        return jsonify({'error': 'Invalid data'}), 400
+    # Creazione del sensore con valori di default
+    sensor_data = (data['tipo'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Senza stanza", 50, 0, 1)
+    try:
+        sensor_id = add_sensor(sensor_data).result()  # Usa la funzione importata
+        notify_ui_update("sensor_added")  # Notifica l'UI per aggiornamenti
+        return jsonify({"success": True, "sensor_id": sensor_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    # Verifica che il tipo sia presente
-    tipo = sensor_data.get('Tipo')
-    if not tipo:
-        return jsonify({'error': 'Tipo is required'}), 400
 
-    # Aggiungi i dati necessari con valori di default
-    data = sensor_data.get('Data', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    stanza = sensor_data.get('Stanza', "")
-    soglia = sensor_data.get('Soglia', 0)
-    error = sensor_data.get('Error', 0)
+@app.route('/sensor/<int:sensor_pk>', methods=['GET'])
+def get_sensor_data(sensor_pk):
+    """
+    Ottiene i dati di un sensore specifico.
+    """
+    try:
+        sensor = get_sensor(sensor_pk).result()  # Usa la funzione importata
+        if not sensor:
+            return jsonify({"error": "Sensore non trovato"}), 404
+        return jsonify({"sensor": sensor}), 200  # Restituisce i dati come JSON
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    parameters = (tipo, data, stanza, soglia, error)
 
-    # Ottieni il future dell'aggiunta del sensore
-    future = add_sensor(parameters)
-    result = future.result()
+@app.route('/sensor/value', methods=['POST'])
+def insert_value():
+    """
+    Inserisce un valore per un sensore specifico.
+    Richiede: {"sensor_pk": <int>, "value": <int>, "allarme": <int>}
+    """
+    data = request.json
+    if not data or not all(key in data for key in ("sensor_pk", "value", "allarme")):
+        return jsonify({"error": "Dati incompleti"}), 400
 
-    if result == 1:  # Successo
-        # Ottieni la pk del sensore appena aggiunto
-        conn = sqlite3.connect(f.get_db())
-        try:
-            c = conn.cursor()
-            c.execute('SELECT last_insert_rowid()')
-            pk = c.fetchone()[0]
-            notify_ui_update("nuovo")
-            return jsonify({'result': 'Sensor added successfully', 'pk': pk})
-        finally:
-            conn.close()
-    else:
-        return jsonify({'error': 'Failed to add sensor'}), 500
+    try:
+        result = add_value(data['sensor_pk'], data['value'], data['allarme']).result()  # Usa la funzione importata
+        notify_ui_update("value_added")  # Notifica l'UI per aggiornamenti
+        return jsonify({"success": True}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.route('/sensors/<int:sensor_pk>', methods=['GET', 'PUT', 'DELETE'])
-def sensor(sensor_pk):
-    if request.method == 'GET':
-        # Get the future object  
-        future = get_sensor_by_pk(sensor_pk)
-        # Wait for the result
-        sensor = future.result()
-        if sensor:
-            return jsonify(row_to_dict(sensor))
-        else:
-            return jsonify({'error': 'Sensor not found'}), 404
-    elif request.method == 'PUT':
-        new_data = request.get_json()
-        if not new_data:
-            return jsonify({'error': 'Invalid data'}), 400
-        parameters = (
-            new_data.get('Tipo'),
-            new_data.get('Data'),
-            new_data.get('Stanza'),
-            new_data.get('Soglia'),
-            new_data.get('Error'),
-        )
-        # Get the future
-        future = edit_sensor(sensor_pk, parameters)
-        # Wait for the result
-        result = future.result()
-        if result == 1:
-            return jsonify({'result': 'Sensor updated successfully'})
-        else:
-            return jsonify({'error': 'Failed to update sensor'}), 500
-    elif request.method == 'DELETE':
-        # Get the future
-        future = delete_sensor(sensor_pk)
-        # Wait for the result
-        result = future.result()
-        if result == 1:
-            return jsonify({'result': 'Sensor deleted successfully'})
-        else:
-            return jsonify({'error': 'Failed to delete sensor'}), 500
+
+
+
+
 
 
 def run_flask_app():
+
     print("avvio")
     socketio.run(app, host='0.0.0.0', port=5001)
 

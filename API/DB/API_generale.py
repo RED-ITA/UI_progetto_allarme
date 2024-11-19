@@ -29,8 +29,12 @@ def create_db():
 
             # Create the VALORI table
             c.execute('''CREATE TABLE IF NOT EXISTS VALORI (
-                            Id INTEGER PRIMARY KEY, 
-                            Value INTEGER
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            SensorPk INTEGER,
+                            Value INTEGER,
+                            Data TEXT,
+                            Allarme INTEGER, 
+                            FOREIGN KEY(SensorPk) REFERENCES SENSORI(SensorPk)
                         )''')
             
             # Create the SISTEMA table
@@ -42,6 +46,7 @@ def create_db():
                             Error INTEGER
                         )''')
             
+            #todo fa schifo
             c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Aggiorna, Error) 
                          VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
 
@@ -69,6 +74,8 @@ def create_db():
             c.execute('''CREATE TABLE IF NOT EXISTS STANZE (
                             Nome TEXT PRIMARY KEY
                         )''')
+            
+
 
             conn.commit()
             conn.close()
