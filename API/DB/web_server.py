@@ -55,7 +55,7 @@ def create_sensor():
         return jsonify({"error": "Tipo non fornito"}), 400
 
     # Creazione del sensore con valori di default
-    sensor_data = (data['tipo'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Senza stanza", 50, 0, 1)
+    sensor_data = (data['tipo'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Senza stanza", 50, 0, 0)
     try:
         sensor_id = add_sensor(sensor_data).result()  # Usa la funzione importata
         notify_ui_update("sensor_added")  # Notifica l'UI per aggiornamenti
