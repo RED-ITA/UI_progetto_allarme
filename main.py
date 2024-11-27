@@ -13,6 +13,7 @@ from API.DB import (
 from API.DB.web_server import run_flask_app
 
 from API.DB.queue_manager import init_db_manager, db_enqueue, db_stop
+from API.DB.API_bg import controllo_valori
 from OBJ import OBJ_UI_Sensore as o
 
 from CMP import header as h 
@@ -79,9 +80,15 @@ class MainWindows(QMainWindow):
 
     def handle_update(self, data):
         # Aggiorna la UI o gestisci i dati in modo thread-safe
+        self.lettura_valori()
         self.senso_page.init_sensors()
         self.senso_page.refresh_ui()
         # Inserisci il codice per aggiornare la UI o i componenti qui
+
+
+    def lettura_valori(self):
+        controllo_valori()
+
 
     def closeEvent(self, event):
         # Chiamata a db_stop prima di chiudere l'applicazione
@@ -222,12 +229,16 @@ class MainWindows(QMainWindow):
         self.main_layout.setCurrentIndex(2)
 
     def save_sensor_data(self, sensor_data):
+        if sensor_data['Stanza'] != "":
+            stato = 1
+        else:
+            stato = 0
         future = db_api.edit_sensor(self.sensor_form_page.sensor_pk, (
             sensor_data['Tipo'],
             sensor_data['Data'],
             sensor_data['Stanza'],
             sensor_data['Soglia'],
-            0  # Error field, set to 0 by default
+            stato  # Error field, set to 0 by default
         )) if self.sensor_form_page.edit_mode else db_api.add_sensor((
             sensor_data['Tipo'],
             sensor_data['Data'],

@@ -46,9 +46,11 @@ def create_db():
                             Error INTEGER
                         )''')
             
-            #todo fa schifo
-            c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Aggiorna, Error) 
-                         VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
+            c.execute('SELECT COUNT(*) FROM SISTEMA')
+            count = c.fetchone()[0]
+            if count == 0:
+                c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Aggiorna, Error) 
+                             VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
 
             # Create the LOG table with an auto-incrementing primary key
             c.execute('''CREATE TABLE IF NOT EXISTS LOG (

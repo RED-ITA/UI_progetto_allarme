@@ -12,7 +12,6 @@ import concurrent.futures
 import time
 from API.DB.queue_manager import db_enqueue
 from OBJ import OBJ_UI_Sensore as o
-from API.DB.web_server import notify_bg_update
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -50,7 +49,6 @@ def edit_sensor(sensor_id, new_data):
                      WHERE Id = ?''', (1, 1))
         conn.commit()
         log_file(2102, f"Evento completato su componente specifico: {sensor_id}")
-        notify_bg_update(sensor_id)
         return 1  # Success
     finally:
         conn.close()
@@ -69,7 +67,6 @@ def delete_sensor(sensor_pk):
                      SET Aggiorna = ? 
                      WHERE Id = ?''', (1, 1))
         conn.commit()
-        notify_bg_update(sensor_pk)
         log_file(2103, f"Evento completato su componente specifico: {sensor_pk}")
         return 1  # Success
     finally:

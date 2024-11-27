@@ -34,10 +34,11 @@ def notify_ui_update(tipo):
     print("Emettendo evento process_to_ui_update con tipo:", tipo)
     socketio.emit('process_to_ui_update', {"type": tipo})
 
-# Evento per notificare l'UI che il processo Modbus ha aggiornato i parametri
-def notify_bg_update(tipo):
-    print("Emettendo evento process_to_ui_update con tipo:", tipo)
-    socketio.emit('ui_to_process_update', {"type": tipo})
+@socketio.on('ui_to_process_update')
+def handle_ui_update(data):
+    print("Aggiornamento ricevuto dall'UI:", data)
+    # Trasmetti l'aggiornamento ad altri client
+    socketio.emit('process_to_ui_update', data)
 
 
 # Helper function to convert sqlite3.Row objects to dictionaries

@@ -101,3 +101,46 @@ def get_sensor(sensor_pk=None):
         return sensors
     finally:
         conn.close()
+
+
+@db_enqueue(priority=1)
+def controllo_valori():
+    """
+    Checks sensor values against their thresholds and updates the system alarm if necessary.
+    Logs any threshold breaches into the LOG table.
+    """
+    conn = sqlite3.connect(f.get_db())
+    conn.row_factory = sqlite3.Row  # Configure the cursor to return rows as dictionaries
+    try:
+        c = conn.cursor()
+
+        # Get all active sensors
+        c.execute("SELECT SensorPk, Soglia FROM SENSORI WHERE Stato = 1")
+        sensors = c.fetchall()
+
+        alarm_triggered = False
+
+        for sensor in sensors:
+            SensorPk = sensor['SensorPk']
+            Soglia = sensor['Soglia']
+
+            # Get the latest value for this sensor
+            c.execute("SELECT Value, Data FROM VALORI WHERE SensorPk = ? ORDER BY Data DESC LIMIT 1", (SensorPk,))
+            value_row = c.fetchone()
+            if value_row:
+                Value = value_row['Value']
+                Data = value_row['Data']
+
+                if Value > Soglia:
+                    # Set SISTEMA.Allarme to 1
+                    c.execute("UPDATE SISTEMA SET Allarme = 1 WHERE Id = 1")
+                    alarm_triggered = True
+
+                    # Insert into LOG
+                    c.execute("INSERT INTO LOG (SensorId, Data) VALUES (?, ?)", (SensorPk, Data))
+                    print("allarme")
+
+        if alarm_triggered:
+            conn.commit()
+    finally:
+        conn.close()
