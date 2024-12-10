@@ -31,16 +31,21 @@ import time
 
 class WebSocketListener(QThread):
     update_received = pyqtSignal(dict)
+    update_sending = pyqtSignal(int, str)
     
     def __init__(self):
         super().__init__()
         self.sio = socketio.Client()
+        self.update_sending.connect(self.send_update_to_api)
 
     def run(self):
         self.sio.connect('http://localhost:5001', wait_timeout=10)
         self.sio.on('process_to_ui_update', self.on_update_from_api)
         self.sio.on('connect_error', lambda: print("Errore di connessione"))
         self.sio.on('disconnect', lambda: print("Disconnesso"))
+
+    def send_update_to_api(self, id, tipo):
+        self.sio.emit('update_from_ui', {'id': id, 'tipo': tipo})
 
 
     def on_update_from_api(self, data):
@@ -66,6 +71,9 @@ class MainWindows(QMainWindow):
         self.listener.update_received.connect(self.handle_update)
 
         self.listener.start()
+
+        # self.listener.update_sending.emit(1, "del") #delete
+        # self.listener.update_sending.emit(1, "mod") #modificato
 
         self.setWindowTitle("ALLARME APP")
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -252,6 +260,7 @@ class MainWindows(QMainWindow):
         try:
             result = future.result()
             success = bool(result)
+            
             self.signal_sensor_saved.emit(success)
         except Exception as e:
             log.log_file(404, f"{e}")
@@ -259,6 +268,7 @@ class MainWindows(QMainWindow):
 
     def handle_sensor_saved_ui_update(self, success):
         if success:
+            self.listener.update_sending.emit(self.sensor_form_page.sensor_pk, "mod") #modificato
             log.log_file(2007 if self.sensor_form_page.edit_mode else 2005, "Sensore modificato con successo." if self.sensor_form_page.edit_mode else "Nuovo sensore aggiunto con successo.")
         else:
             log.log_file(2001, "Errore nella modifica del sensore." if self.sensor_form_page.edit_mode else "Errore nell'aggiunta del nuovo sensore.")
@@ -268,6 +278,8 @@ class MainWindows(QMainWindow):
         self.senso_page.init_sensors()
         self.senso_page.refresh_ui()
             
+    def eliminalo(self, id):
+        self.listener.update_sending.emit(id, "del") #delete
     
     def _log_thread_info(self, function_name):
         """Log thread information for diagnostics."""

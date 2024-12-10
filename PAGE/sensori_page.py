@@ -207,6 +207,7 @@ class Sensori_Page(QWidget):
 
     def elimina_sensore(self, sensor_pk):
         log_file(100, f" {sensor_pk}")
+        self.master.eliminalo(sensor_pk)
         # Aggiorna lo stato del sensore nel database in modo asincrono tramite la coda
         future = db_api.delete_sensor(sensor_pk=sensor_pk)
         future.add_done_callback(self.on_delete_sensor_done)
