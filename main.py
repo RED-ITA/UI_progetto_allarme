@@ -1,7 +1,8 @@
 from PyQt6.QtGui import  QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QThread
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
-
+import websocket
+import json
 import os
 import sys
 
@@ -31,26 +32,55 @@ import time
 
 class WebSocketListener(QThread):
     update_received = pyqtSignal(dict)
-    update_sending = pyqtSignal(int, str)
-    
+    """
+    Segnale PyQt che emetteremo quando riceviamo un messaggio dal server.
+    Il dict conterrà i dati decodificati (se in JSON).
+    """
+
     def __init__(self):
         super().__init__()
-        self.sio = socketio.Client()
-        self.update_sending.connect(self.send_update_to_api)
+        self.ws_app = None
 
     def run(self):
-        self.sio.connect('http://localhost:5001', wait_timeout=10)
-        self.sio.on('process_to_ui_update', self.on_update_from_api)
-        self.sio.on('connect_error', lambda: print("Errore di connessione"))
-        self.sio.on('disconnect', lambda: print("Disconnesso"))
+        # Crea un WebSocketApp e specifica i callback
+        self.ws_app = websocket.WebSocketApp(
+            "ws://localhost:5001/ui_to_process_update",
+            on_open=self.on_open,
+            on_message=self.on_message,
+            on_error=self.on_error,
+            on_close=self.on_close
+        )
 
-    def send_update_to_api(self, id, tipo):
-        self.sio.emit('update_from_ui', {'id': id, 'tipo': tipo})
+        # Avvia il loop in un thread (interno a websocket-client)
+        self.ws_app.run_forever()
 
+    def on_open(self, ws):
+        print("[UI] Connessione WebSocket aperta")
 
-    def on_update_from_api(self, data):
-        print("Aggiornamento ricevuto dall'API:", data)
-        self.update_received.emit(data)  # Emetti il segnale con i dati ricevuti
+    def on_message(self, ws, message):
+        print("[UI] Messaggio ricevuto dal server:", message)
+        # Se ci aspettiamo un JSON, possiamo tentare un parse
+        try:
+            data = json.loads(message)
+        except:
+            data = {"raw": message}
+        self.update_received.emit(data)
+
+    def on_error(self, ws, error):
+        print("[UI] Errore WebSocket:", error)
+
+    def on_close(self, ws, close_status_code, close_msg):
+        print("[UI] Connessione WebSocket chiusa")
+
+    def send_update_to_api(self, sensor_id, tipo):
+        """
+        Questo metodo manda un messaggio (stringa JSON) al server.
+        """
+        if self.ws_app and self.ws_app.sock and self.ws_app.sock.connected:
+            msg = json.dumps({"id": sensor_id, "tipo": tipo})
+            self.ws_app.send(msg)
+        else:
+            print("[UI] WebSocket non connesso, impossibile inviare il messaggio")
 
 
 class MainWindows(QMainWindow):

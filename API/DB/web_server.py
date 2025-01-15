@@ -1,5 +1,7 @@
 # Importa le librerie necessarie per gevent
 from flask_socketio import SocketIO, emit
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 
 import gevent
 import gevent.monkey
@@ -29,16 +31,33 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 #
 
-# Evento per notificare l'UI che il processo Modbus ha aggiornato i parametri
-def notify_ui_update(tipo):
-    print("Emettendo evento process_to_ui_update con tipo:", tipo)
-    socketio.emit('process_to_ui_update', {"type": tipo})
+# --- Nuovo endpoint WebSocket classico ---
+@app.route('/ui_to_process_update')
+def ui_to_process_update():
+    """
+    Questo endpoint gestisce connessioni WebSocket.
+    """
+    # geventwebsocket permette di accedere all'oggetto WebSocket se presente
+    if request.environ.get('wsgi.websocket'):
+        ws = request.environ['wsgi.websocket']
+        while True:
+            message = ws.receive()
+            if message is None:
+                # Il client ha chiuso la connessione
+                break
+            print("Messaggio WebSocket ricevuto dal client UI:", message)
+            
+            # Se vuoi trasmettere il messaggio all’ESP (o ad altri WebSocket),
+            # dovresti salvare i WebSocket dei client ESP e inoltrarglielo.
+            # Oppure, se vuoi semplicemente inviare una risposta al mittente:
+            ws.send("Ho ricevuto: " + message)
+            
+        return ""  # Fine della funzione (la connessione è chiusa)
+    else:
+        # Non è una richiesta WebSocket
+        return "Only WebSocket connections are allowed."
+    
 
-# @socketio.on('ui_to_process_update')
-def handle_ui_update(data):
-    print("Aggiornamento ricevuto dall'UI:", data)
-    # Trasmetti l'aggiornamento ad altri client
-    socketio.emit('process_to_ui_update', data)
 
 
 # Helper function to convert sqlite3.Row objects to dictionaries
@@ -59,7 +78,7 @@ def create_sensor():
     sensor_data = (data['tipo'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Senza stanza", 50, 0, 0)
     try:
         sensor_id = add_sensor(sensor_data).result()  # Usa la funzione importata
-        notify_ui_update("sensor_added")  # Notifica l'UI per aggiornamenti
+        #notify_ui_update("sensor_added")  # Notifica l'UI per aggiornamenti
         return jsonify({"success": True, "sensor_id": sensor_id}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -91,7 +110,7 @@ def insert_value():
 
     try:
         result = add_value(data['sensor_pk'], data['value'], data['allarme']).result()  # Usa la funzione importata
-        notify_ui_update("value_added")  # Notifica l'UI per aggiornamenti
+        # notify_ui_update("value_added")  # Notifica l'UI per aggiornamenti
         return jsonify({"success": True}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -105,5 +124,7 @@ def insert_value():
 def run_flask_app():
 
     print("avvio")
-    socketio.run(app, host='0.0.0.0', port=5001)
+    server = pywsgi.WSGIServer(('0.0.0.0', 5001), app, handler_class=WebSocketHandler)
+    print("Server WebSocket in esecuzione su 0.0.0.0:5001")
+    server.serve_forever()
 
