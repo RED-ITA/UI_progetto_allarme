@@ -224,7 +224,7 @@ log_messages = {
     2501: ('INFO', "Messa in coda"),
     2502: ('INFO', "Gestita ora"),
     # WARNING
-
+    2800: ("INFO", ""),
     # THREAD messages
     # INFO
     1000: ('INFO', 'thread: '),

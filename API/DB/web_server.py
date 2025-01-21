@@ -1,12 +1,15 @@
-# Importa le librerie necessarie per gevent
-from flask_socketio import SocketIO, emit
-
 import gevent
 import gevent.monkey
-#gevent.monkey.patch_all()
-from datetime import datetime
-from flask import Flask, request, jsonify
+gevent.monkey.patch_all()  # Patching per abilitare il cooperative multitasking su socket, etc.
 
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
+
+from flask import Flask, request, jsonify
+from flask_sockets import Sockets
+
+from datetime import datetime
+# Qui importi i tuoi metodi di accesso al DB, ad es.:
 
 from API.DB.API_bg import (
     add_sensor, 
@@ -24,42 +27,56 @@ import socketio
 
 
 app = Flask(__name__)
+sockets = Sockets(app)
 
-# Imposta l'async_mode su 'gevent'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+# Opzionale: una struttura per conservare eventuali WebSocket connessi (se vuoi broadcast o simili)
+connected_ws = []
 #
 
-# Evento per notificare l'UI che il processo Modbus ha aggiornato i parametri
+
+
 def notify_ui_update(tipo):
-    print("Emettendo evento process_to_ui_update con tipo:", tipo)
-    socketio.emit('process_to_ui_update', {"type": tipo})
+    """
+    Se vuoi inviare un messaggio di notifica a tutti i client WebSocket connessi
+    puoi usare questo metodo (è facoltativo, puoi anche non usarlo).
+    """
+    print("Notifica di aggiornamento ai WebSocket (tipo):", tipo)
+    for ws in connected_ws:
+        if not ws.closed:
+            ws.send(f"process_to_ui_update: {tipo}")
+
 
 # @socketio.on('ui_to_process_update')
 def handle_ui_update(data):
     print("Aggiornamento ricevuto dall'UI:", data)
     # Trasmetti l'aggiornamento ad altri client
-    socketio.emit('process_to_ui_update', data)
+    for ws in connected_ws:
+        if not ws.closed:
+            ws.send(f"ui_to_process_update: {data}")
 
 
 # Helper function to convert sqlite3.Row objects to dictionaries
 def row_to_dict(row):
     return dict(zip(row.keys(), row))
 
+
+    
 @app.route('/sensor', methods=['POST'])
 def create_sensor():
     """
     Aggiunge un nuovo sensore con valori di default.
-    Richiede: {"tipo": <int>}
+    Richiede nel JSON: {"tipo": <int>}
     """
     data = request.json
     if not data or 'tipo' not in data:
         return jsonify({"error": "Tipo non fornito"}), 400
 
-    # Creazione del sensore con valori di default
-    sensor_data = (data['tipo'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Senza stanza", 50, 0, 0)
     try:
+        sensor_data = (data['tipo'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Senza stanza", 50, 0, 0)
         sensor_id = add_sensor(sensor_data).result()  # Usa la funzione importata
-        notify_ui_update("sensor_added")  # Notifica l'UI per aggiornamenti
+        # Emetti l'evento di notifica se necessario
+        notify_ui_update("sensor_added")
+
         return jsonify({"success": True, "sensor_id": sensor_id}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -69,12 +86,15 @@ def create_sensor():
 def get_sensor_data(sensor_pk):
     """
     Ottiene i dati di un sensore specifico.
+    Esempio di risposta: {"sensor": [...] }
     """
     try:
-        sensor = get_sensor(sensor_pk).result()  # Usa la funzione importata
+        sensor = get_sensor(sensor_pk).result()
         if not sensor:
             return jsonify({"error": "Sensore non trovato"}), 404
-        return jsonify({"sensor": sensor}), 200  # Restituisce i dati come JSON
+
+        # Se la funzione get_sensor() restituisce una lista di dict, puoi tornarla come "sensor"
+        return jsonify({"sensor": sensor}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -83,15 +103,16 @@ def get_sensor_data(sensor_pk):
 def insert_value():
     """
     Inserisce un valore per un sensore specifico.
-    Richiede: {"sensor_pk": <int>, "value": <int>, "allarme": <int>}
+    Richiede JSON: {"sensor_pk": <int>, "value": <int>, "allarme": <int>}
     """
     data = request.json
-    if not data or not all(key in data for key in ("sensor_pk", "value", "allarme")):
+    if not data or not all(k in data for k in ("sensor_pk", "value", "allarme")):
         return jsonify({"error": "Dati incompleti"}), 400
 
     try:
-        result = add_value(data['sensor_pk'], data['value'], data['allarme']).result()  # Usa la funzione importata
-        notify_ui_update("value_added")  # Notifica l'UI per aggiornamenti
+        add_value(data['sensor_pk'], data['value'], data['allarme']).result()
+        # Notifica l'UI
+        notify_ui_update("value_added")
         return jsonify({"success": True}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -102,8 +123,56 @@ def insert_value():
 
 
 
+
+#
+# ======================
+#   ENDPOINT WEBSOCKET
+# ======================
+#
+
+@sockets.route('/ui_to_process_update')
+def ws_ui_to_process_update(ws):
+    """
+    Gestisce il WebSocket standard all'endpoint /ui_to_process_update.
+    L'ESP32 può connettersi a ws://<IP>:5001/ui_to_process_update
+    e inviare/ricevere messaggi in formato testuale.
+    """
+    print("Client WebSocket connesso su /ui_to_process_update")
+
+    # Aggiungiamo il ws alla lista globale, se vogliamo gestire broadcast o simili
+    connected_ws.append(ws)
+
+    try:
+        while not ws.closed:
+            message = ws.receive()  # Riceve un messaggio testuale dal client
+            if message is None:
+                # Se None, significa che il client ha chiuso la connessione
+                break
+
+            print(f"Messaggio WebSocket ricevuto: {message}")
+
+            # Esempio di risposta immediata
+            ws.send("Messaggio ricevuto dal server!")
+    finally:
+        # Rimuovi dalla lista dei connessi se si disconnette
+        if ws in connected_ws:
+            connected_ws.remove(ws)
+
+    print("Client WebSocket disconnesso.")
+
+
+#
+# ======================
+#   MAIN / AVVIO SERVER
+# ======================
+#
+
 def run_flask_app():
-
-    print("avvio")
-    socketio.run(app, host='0.0.0.0', port=5001)
-
+    # Avvio di un server gevent WSGI che supporta WebSocket
+    server = pywsgi.WSGIServer(
+        ('0.0.0.0', 5001),
+        app,
+        handler_class=WebSocketHandler
+    )
+    print("Server in ascolto su 0.0.0.0:5001...")
+    server.serve_forever()
