@@ -63,26 +63,33 @@ def row_to_dict(row):
     
 @app.route('/sensor', methods=['POST'])
 def create_sensor():
-    """
-    Aggiunge un nuovo sensore con valori di default.
-    Richiede nel JSON: {"tipo": <int>}
-    """
+    print("create_sensore", flush=True)
     data = request.json
     if not data or 'tipo' not in data:
+        print("Dati non validi", flush=True)
         return jsonify({"error": "Tipo non fornito"}), 400
 
     try:
-        sensor_data = (data['tipo'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Senza stanza", 50, 0, 0)
-        sensor_id = add_sensor(sensor_data).result()  # Usa la funzione importata
-        # Emetti l'evento di notifica se necessario
+        sensor_data = (
+            data['tipo'], 
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
+            "Senza stanza", 50, 0, 0
+        )
+        print("Chiamata a add_sensor con:", sensor_data, flush=True)
+        sensor_id = add_sensor(sensor_data).result()  # Potrebbe bloccare
+        print("add_sensor completato, sensor_id =", sensor_id, flush=True)
+        
+        print("Chiamata a notify_ui_update", flush=True)
         notify_ui_update("sensor_added")
-
+        print("notify_ui_update completato", flush=True)
+        
         return jsonify({"success": True, "sensor_id": sensor_id}), 201
     except Exception as e:
+        print("Errore in create_sensor:", e, flush=True)
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/sensor/<int:sensor_pk>', methods=['GET'])
+@app.route('/get_sensor/<int:sensor_pk>', methods=['GET'])
 def get_sensor_data(sensor_pk):
     """
     Ottiene i dati di un sensore specifico.
@@ -169,10 +176,6 @@ def ws_ui_to_process_update(ws):
 
 def run_flask_app():
     # Avvio di un server gevent WSGI che supporta WebSocket
-    server = pywsgi.WSGIServer(
-        ('0.0.0.0', 5001),
-        app,
-        handler_class=WebSocketHandler
-    )
+    app.run(host="0.0.0.0", port=5001, debug=True, use_reloader=False)
+
     print("Server in ascolto su 0.0.0.0:5001...")
-    server.serve_forever()
