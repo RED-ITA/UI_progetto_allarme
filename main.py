@@ -12,7 +12,7 @@ from API.DB import (
 )
 from API.DB.web_server import run_flask_app
 
-from API.DB.queue_manager import init_db_manager, db_enqueue, db_stop
+from API.DB.queue_manager import init_db_manager
 from API.DB.API_bg import controllo_valori
 from OBJ import OBJ_UI_Sensore as o
 
@@ -110,7 +110,7 @@ class MainWindows(QMainWindow):
         
 
         log.setup_logger()
-        db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
+        # db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
 
         self.listener = WebSocketListener()
 
@@ -147,7 +147,7 @@ class MainWindows(QMainWindow):
 
     def closeEvent(self, event):
         # Chiamata a db_stop prima di chiudere l'applicazione
-        db_stop()
+        # db_stop()
         log.log_file(2701, "Chiusura dell'applicazione gestita correttamente")
         # Continua con l'evento di chiusura standard
         event.accept()
@@ -255,19 +255,12 @@ class MainWindows(QMainWindow):
         # Modifica l'header se necessario
         self.header.set_tipo(5)  # Supponendo che il tipo 1 modifichi l'header
         # Carica i dati del sensore
-        future = db_api.get_sensor_by_pk(sensor_pk)
-        future.add_done_callback(lambda fut: self.handle_sensor_loaded(fut, sensor_pk))
-
-    def handle_sensor_loaded(self, future, sensor_pk):
-        self._log_thread_info("handle_loadedSensor_completata")
-        try:
-            risult = future.result()
-            self.signal_sensor_data_loaded.emit(risult, sensor_pk)
-            log.log_file(1000, f"Sensor loaded: {risult}")
-            # Chiama la funzione on_sensors_loaded con il risultato e sensor_pk
-        except Exception as e:
-            log.log_file(404, f"{e}")
-
+        risult = db_api.get_sensor_by_pk(sensor_pk)
+        
+        self.signal_sensor_data_loaded.emit(risult, sensor_pk)
+        log.log_file(1000, f"Sensor loaded: {risult}")
+        # Chiama la funzione on_sensors_loaded con il risultato e sensor_pk
+        
     def on_sensors_loaded(self, result, sensor_pk):
         # Carica i dati del sensore nella form di modifica
         self.sensor_form_page.load_sensor_data(result)
@@ -339,9 +332,13 @@ class MainWindows(QMainWindow):
 if __name__ == "__main__":
     db.create_db()
     # Avvia il server Flask in un thread separato
+    db_manager = init_db_manager(f.get_db())  # Sostituisci con il percorso corretto del database
+    db.create_db()
+    # Avvia il server Flask in un thread separato
     flask_thread = threading.Thread(target=run_flask_app)
-    flask_thread.daemon = True  # Termina il thread quando l'app principale si chiude
+    flask_thread.daemon = False  # Termina il thread quando l'app principale si chiude
     flask_thread.start()
+    
 
     time.sleep(10)
 

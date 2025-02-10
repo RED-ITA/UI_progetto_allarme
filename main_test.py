@@ -12,7 +12,7 @@ from API.DB import (
 )
 from API.DB.web_server import run_flask_app
 
-from API.DB.queue_manager import init_db_manager, db_enqueue, db_stop
+from API.DB.queue_manager import init_db_manager, db_enqueue
 from API.DB.API_bg import controllo_valori
 from OBJ import OBJ_UI_Sensore as o
 
@@ -33,7 +33,7 @@ import json
 
 
 if __name__ == "__main__":
-    db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
+    db_manager = init_db_manager(f.get_db())  # Sostituisci con il percorso corretto del database
     db.create_db()
     # Avvia il server Flask in un thread separato
     flask_thread = threading.Thread(target=run_flask_app)

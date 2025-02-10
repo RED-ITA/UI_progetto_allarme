@@ -16,7 +16,7 @@ from OBJ import OBJ_UI_Sensore as o
 from concurrent.futures import ThreadPoolExecutor
 
 @db_enqueue(priority=1)
-def add_sensor(sensor_data):
+def add_sensor(persistent_conn, sensor_data):
     """
     Aggiunge un nuovo sensore nella tabella SENSORI e crea una riga corrispondente
     nella tabella VALORI per il sensore appena aggiunto.
@@ -26,9 +26,8 @@ def add_sensor(sensor_data):
     :return: 1 se il sensore è stato aggiunto correttamente, altrimenti solleva un'eccezione.
     """
     log_file(2001)  # Log di inizio
-    conn = sqlite3.connect(f.get_db())
     try:
-        c = conn.cursor()
+        c = persistent_conn.cursor()
         # Inserisci il sensore nella tabella SENSORI
         c.execute('''INSERT INTO SENSORI (Tipo, Data, Stanza, Soglia, Error, Stato) 
                      VALUES (?, ?, ?, ?, ?, ?)''', sensor_data)
@@ -42,15 +41,15 @@ def add_sensor(sensor_data):
         c.execute('''UPDATE SISTEMA 
                      SET Aggiorna = 1 
                      WHERE Id = 1''')
-        conn.commit()
+        persistent_conn.commit()
         log_file(2101)  # Log di successo
         return sensor_id
-    finally:
-        conn.close()
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
 
 @db_enqueue(priority=1)
-def add_value(sensor_pk, value, allarme):
+def add_value(persistent_conn, sensor_pk, value, allarme):
     """
     Inserisce un valore nella tabella VALORI per un sensore specifico e,
     se il valore di allarme è 1, aggiorna la tabella SISTEMA impostando il campo Allarme a 1.
@@ -61,9 +60,8 @@ def add_value(sensor_pk, value, allarme):
     :return: 1 se il valore è stato aggiunto correttamente e la tabella SISTEMA aggiornata (se necessario).
     """
     log_file(2002)  # Log di inizio
-    conn = sqlite3.connect(f.get_db())
     try:
-        c = conn.cursor()
+        c = persistent_conn.cursor()
         # Inserisci il valore nella tabella VALORI
         c.execute('''INSERT INTO VALORI (SensorPk, Value, Data, Allarme) 
                      VALUES (?, ?, ?, ?)''', (sensor_pk, value, time.strftime("%Y-%m-%d %H:%M:%S"), allarme))
@@ -74,24 +72,23 @@ def add_value(sensor_pk, value, allarme):
                          SET Allarme = 1 
                          WHERE Id = 1''')
         
-        conn.commit()
+        persistent_conn.commit()
         log_file(2102)  # Log di successo
         return 1
-    finally:
-        conn.close()
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
 @db_enqueue(priority=2)
-def get_sensor(sensor_pk=None):
+def get_sensor(persistent_conn, sensor_pk=None):
     """
     Recupera i dati di uno specifico sensore o di tutti i sensori dal database.
     
     :param sensor_pk: (Opzionale) ID del sensore da recuperare. Se None, recupera tutti i sensori.
     :return: Una lista di dict contenente i dati dei sensori.
     """
-    conn = sqlite3.connect(f.get_db())
-    conn.row_factory = sqlite3.Row  # Configura il cursore per restituire righe come dizionari
+    persistent_conn.row_factory = sqlite3.Row  # Configura il cursore per restituire righe come dizionari
     try:
-        c = conn.cursor()
+        c = persistent_conn.cursor()
         if sensor_pk:
             c.execute('''SELECT * FROM SENSORI WHERE SensorPk = ?''', (sensor_pk,))
         else:
@@ -99,20 +96,19 @@ def get_sensor(sensor_pk=None):
         
         sensors = [dict(row) for row in c.fetchall()]  # Converte ogni riga in un dizionario
         return sensors
-    finally:
-        conn.close()
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
 
 @db_enqueue(priority=1)
-def controllo_valori():
+def controllo_valori(persistent_conn):
     """
     Checks sensor values against their thresholds and updates the system alarm if necessary.
     Logs any threshold breaches into the LOG table.
     """
-    conn = sqlite3.connect(f.get_db())
-    conn.row_factory = sqlite3.Row  # Configure the cursor to return rows as dictionaries
+    persistent_conn.row_factory = sqlite3.Row  # Configure the cursor to return rows as dictionaries
     try:
-        c = conn.cursor()
+        c = persistent_conn.cursor()
 
         # Get all active sensors
         c.execute("SELECT SensorPk, Soglia FROM SENSORI WHERE Stato = 1")
@@ -141,6 +137,6 @@ def controllo_valori():
                     print("allarme")
 
         if alarm_triggered:
-            conn.commit()
-    finally:
-        conn.close()
+            persistent_conn.commit()
+    except sqlite3.Error as e:
+        print(f"error : {e}")

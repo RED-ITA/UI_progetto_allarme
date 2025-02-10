@@ -76,7 +76,7 @@ def create_sensor():
             "Senza stanza", 50, 0, 0
         )
         print("Chiamata a add_sensor con:", sensor_data, flush=True)
-        sensor_id = add_sensor(sensor_data).result()  # Potrebbe bloccare
+        sensor_id = add_sensor(sensor_data)  # Potrebbe bloccare
         print("add_sensor completato, sensor_id =", sensor_id, flush=True)
         
         print("Chiamata a notify_ui_update", flush=True)
@@ -89,14 +89,16 @@ def create_sensor():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/get_sensor/<int:sensor_pk>', methods=['GET'])
+@app.route('/sensor/<int:sensor_pk>', methods=['GET'])
 def get_sensor_data(sensor_pk):
     """
     Ottiene i dati di un sensore specifico.
     Esempio di risposta: {"sensor": [...] }
     """
     try:
-        sensor = get_sensor(sensor_pk).result()
+        print(f"provo ad ottenere il sensore {sensor_pk}")
+        sensor = get_sensor(sensor_pk)
+        print(sensor)
         if not sensor:
             return jsonify({"error": "Sensore non trovato"}), 404
 
@@ -117,7 +119,7 @@ def insert_value():
         return jsonify({"error": "Dati incompleti"}), 400
 
     try:
-        add_value(data['sensor_pk'], data['value'], data['allarme']).result()
+        add_value(data['sensor_pk'], data['value'], data['allarme'])
         # Notifica l'UI
         notify_ui_update("value_added")
         return jsonify({"success": True}), 201
