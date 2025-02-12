@@ -142,12 +142,12 @@ class SensorFormPage(QWidget):
         log_file(200)
         # Ricarica le stanze dal database e aggiorna la combobox
         future = db.get_all_stanze()
-        future.add_done_callback(self.handle_sensor_loaded)
+        self.handle_sensor_loaded(future)
 
     def handle_sensor_loaded(self, future):
         self._log_thread_info("handle_loadedSensor_completata")
         try:
-            risult = future.result()
+            risult = future
             self.loaded_complet.emit(risult)
             log_file(1000, str(risult))
         except Exception as e:

@@ -286,7 +286,7 @@ class MainWindows(QMainWindow):
             sensor_data['Data'],
             sensor_data['Stanza'],
             sensor_data['Soglia'],
-            stato  # Error field, set to 0 by default
+            stato  # Error field, set to 0 by default 
         )) if self.sensor_form_page.edit_mode else db_api.add_sensor((
             sensor_data['Tipo'],
             sensor_data['Data'],
@@ -294,11 +294,11 @@ class MainWindows(QMainWindow):
             sensor_data['Soglia'],
             0  # Error field, set to 0 by default
         ))
-        future.add_done_callback(lambda fut: self.handle_sensor_saved(fut))
+        self.handle_sensor_saved(future)
 
     def handle_sensor_saved(self, future):
         try:
-            result = future.result()
+            result = future
             success = bool(result)
             
             self.signal_sensor_saved.emit(success)
