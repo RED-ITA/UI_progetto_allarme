@@ -39,7 +39,7 @@ def edit_sensor(persistent_conn, sensor_id, new_data):
     try:
         c = persistent_conn.cursor()
         c.execute('''UPDATE SENSORI 
-                     SET Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
+                     SET Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Stato = ? 
                      WHERE SensorPk = ?''', (*new_data, sensor_id))
         
         c.execute('''UPDATE SISTEMA 

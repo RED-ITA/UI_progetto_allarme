@@ -281,6 +281,7 @@ class MainWindows(QMainWindow):
             stato = 1
         else:
             stato = 0
+        print(stato)
         future = db_api.edit_sensor(self.sensor_form_page.sensor_pk, (
             sensor_data['Tipo'],
             sensor_data['Data'],
