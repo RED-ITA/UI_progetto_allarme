@@ -7,6 +7,7 @@ import sys
 from API import funzioni as f
 from CMP import QPushButtonBadge as q
 from API.LOG import log_file
+from API.DB.API_ui import  insert_activity 
 
 class Home_Page(QWidget):
 
@@ -165,12 +166,14 @@ class Home_Page(QWidget):
     def attiva(self):
         log_file(500, "home_page_activate")
         print("attiva")
+        insert_activity()
         self.activate_button.setVisible(False)
         self.deactivate_button.setVisible(True)
 
     def disattiva(self):
         log_file(500, "home_page_deactivate_attempt")
         print("disattiva-tentativo")
+        # update_activity_shutdown()
         self.master.tastierino_form_page.reset_ui()
         self.master.change_page(5)
 

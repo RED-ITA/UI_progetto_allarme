@@ -14,6 +14,7 @@ from API.DB.web_server import run_flask_app
 
 from API.DB.queue_manager import init_db_manager
 from API.DB.API_bg import controllo_valori
+from API.DB.API_ui import aggiungi_forzatura, update_activity_shutdown
 from OBJ import OBJ_UI_Sensore as o
 
 from CMP import header as h 
@@ -213,11 +214,13 @@ class MainWindows(QMainWindow):
 
     def tastierino_pass(self):
         print("passato")
+        update_activity_shutdown()
         self.home_page.disattiva_passato()
         self.change_page(0)
 
     def tastierino_err(self):
         print("errore")
+        aggiungi_forzatura()   
         self.change_page(0)
     
     def set_background_color(self):

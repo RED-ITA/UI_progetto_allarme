@@ -205,6 +205,15 @@ log_messages = {
     2408: ('ERROR', 'Errore salvataggio di accensione'),
     2409: ('ERROR', 'Errore salvataggio di spegnimento'),
     2410: ('ERROR', 'Errore richiesta sensori stanze'),
+    2411: ('ERROR', 'Errore nella modifica del sensore'),
+    2412: ('ERROR', 'Errore nell\'eliminazione del sensore'),
+    2413: ('ERROR', 'Errore nel recupero delle stanze dal database'),
+    2414: ('ERROR', 'Errore nel recupero dei sensori dal database'),
+    2415: ('ERROR', 'Errore nel recupero dei log dal database'),
+    2416: ('ERROR', 'Errore nel recupero del sensore per PK'),
+    2417: ('ERROR', 'Errore nel recupero dei sensori per stanza'),
+    2418: ('ERROR', 'Errore nel recupero delle activity dal database'),
+    2419: ('ERROR', 'Nessuna entry trovata per l\'aggiornamento dell\'attività'),
 
      # Log operativi delle schede
     2600: ('SUCCESS', "Inizio creazione schede, se non già presenti."),
