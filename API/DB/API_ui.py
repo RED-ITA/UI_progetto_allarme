@@ -217,8 +217,8 @@ def update_activity_shutdown(persistent_conn):
         
         log_id = ultima_entry[0]
         
-        # Aggiorna la colonna della data di disconnessione (ad es. DataE)
-        c.execute('UPDATE ACTIVITY SET DataE = ? WHERE LogId = ?', (data_disconnessione, log_id))
+        # Aggiorna la colonna della data di disconnessione 
+        c.execute('UPDATE ACTIVITY SET DataS = ? WHERE LogId = ?', (data_disconnessione, log_id))
         c.execute("UPDATE SISTEMA SET Stato = 0 WHERE Id = 1")
         persistent_conn.commit()
         

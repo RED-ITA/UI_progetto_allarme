@@ -30,6 +30,7 @@ import threading
 import time
 from websocket import WebSocketApp
 import json 
+import subprocess
 
 class WebSocketListener(QThread):
     # Segnali PyQt
@@ -331,6 +332,17 @@ class MainWindows(QMainWindow):
         log.log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
         
         
+def start_sqlite_web(db_path, port=8080):
+    """
+    Avvia il server sqlite-web per visualizzare il database.
+    Assicurati di avere sqlite-web installato (pip install sqlite-web).
+    """
+    try:
+        # Avvia sqlite-web come sottoprocesso
+        subprocess.Popen(["sqlite_web", db_path, "--port", str(port)])
+        print(f"sqlite-web avviato su http://localhost:{port} per il DB: {db_path}")
+    except Exception as e:
+        print(f"Errore nell'avvio di sqlite-web: {e}")
 
 
 if __name__ == "__main__":
@@ -345,6 +357,10 @@ if __name__ == "__main__":
     
 
     time.sleep(10)
+   
+ 
+    db_path = f.get_db()  
+    start_sqlite_web(db_path, port=8080)
 
     app = QApplication(sys.argv)
     window = MainWindows()
