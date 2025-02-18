@@ -78,6 +78,8 @@ def create_db():
                             Nome TEXT PRIMARY KEY
                         )''')
             
+            
+            
 
 
             conn.commit()

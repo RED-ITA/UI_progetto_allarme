@@ -51,26 +51,33 @@ def add_sensor(persistent_conn, sensor_data):
 @db_enqueue(priority=1)
 def add_value(persistent_conn, sensor_pk, value, allarme):
     """
-    Inserisce un valore nella tabella VALORI per un sensore specifico e,
-    se il valore di allarme è 1, aggiorna la tabella SISTEMA impostando il campo Allarme a 1.
+    Aggiorna il valore nella tabella VALORI per un sensore specifico e,
+    se il valore di allarme è 1 e il sensore è attivo (Stato == 1), 
+    aggiorna la tabella SISTEMA impostando il campo Allarme a 1.
     
     :param sensor_pk: ID del sensore (SensorPk).
-    :param value: Valore da aggiungere.
+    :param value: Nuovo valore da aggiornare.
     :param allarme: Stato di allarme (0 o 1).
-    :return: 1 se il valore è stato aggiunto correttamente e la tabella SISTEMA aggiornata (se necessario).
+    :return: 1 se l'operazione è andata a buon fine.
     """
     log_file(2002)  # Log di inizio
     try:
         c = persistent_conn.cursor()
-        # Inserisci il valore nella tabella VALORI
-        c.execute('''INSERT INTO VALORI (SensorPk, Value, Data, Allarme) 
-                     VALUES (?, ?, ?, ?)''', (sensor_pk, value, time.strftime("%Y-%m-%d %H:%M:%S"), allarme))
         
-        # Se l'allarme è 1, aggiorna la tabella SISTEMA
+        # Aggiorna il record esistente nella tabella VALORI per il sensore specificato
+        c.execute('''UPDATE VALORI 
+                     SET Value = ?, Data = ?, Allarme = ?
+                     WHERE SensorPk = ?''', 
+                  (value, time.strftime("%Y-%m-%d %H:%M:%S"), allarme, sensor_pk))
+        
+        # Se l'allarme è 1, aggiorna la tabella SISTEMA solo se il sensore è attivo
         if allarme == 1:
-            c.execute('''UPDATE SISTEMA 
-                         SET Allarme = 1 
-                         WHERE Id = 1''')
+            c.execute("SELECT Stato FROM SENSORI WHERE SensorPk = ?", (sensor_pk,))
+            ris = c.fetchone()  # Recupera il record del sensore
+            if ris is not None and ris[0] == 1:
+                c.execute('''UPDATE SISTEMA 
+                             SET Allarme = 1 
+                             WHERE Id = 1''')
         
         persistent_conn.commit()
         log_file(2102)  # Log di successo
@@ -114,29 +121,6 @@ def controllo_valori(persistent_conn):
         c.execute("SELECT SensorPk, Soglia FROM SENSORI WHERE Stato = 1")
         sensors = c.fetchall()
 
-        alarm_triggered = False
-
-        for sensor in sensors:
-            SensorPk = sensor['SensorPk']
-            Soglia = sensor['Soglia']
-
-            # Get the latest value for this sensor
-            c.execute("SELECT Value, Data FROM VALORI WHERE SensorPk = ? ORDER BY Data DESC LIMIT 1", (SensorPk,))
-            value_row = c.fetchone()
-            if value_row:
-                Value = value_row['Value']
-                Data = value_row['Data']
-
-                if Value > Soglia:
-                    # Set SISTEMA.Allarme to 1
-                    c.execute("UPDATE SISTEMA SET Allarme = 1 WHERE Id = 1")
-                    alarm_triggered = True
-
-                    # Insert into LOG
-                    c.execute("INSERT INTO LOG (SensorId, Data) VALUES (?, ?)", (SensorPk, Data))
-                    print("allarme")
-
-        if alarm_triggered:
-            persistent_conn.commit()
+        # TODO
     except sqlite3.Error as e:
         print(f"error : {e}")

@@ -185,3 +185,5 @@ class Home_Page(QWidget):
     def rilevamenti(self):
         log_file(500, "home_page_detections")
         print("rilevamenti")
+        self.header.set_tipo(6)
+        self.master.change_page(6)

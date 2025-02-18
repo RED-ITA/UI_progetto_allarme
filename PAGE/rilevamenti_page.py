@@ -16,7 +16,6 @@ from OBJ import OBJ_UI_Sensore as o
 
 class Rilevamenti_page(QWidget):
 
-    signal_sensor_clicked = pyqtSignal(int)
 
     def __init__(self, master, header):
         super().__init__()
@@ -26,7 +25,9 @@ class Rilevamenti_page(QWidget):
         self.header = header
 
         self.main_layout = QHBoxLayout()
+        
         self.initUI()
+        
 
         self.setLayout(self.main_layout)
         self.setAutoFillBackground(True)
@@ -36,30 +37,48 @@ class Rilevamenti_page(QWidget):
         log_file(100, "stanze")  # Inizializzazione dell'interfaccia Stanze_Page
 
         # Scroll area a sinistra con le stanze disponibili
-        self.area_stanze = QScrollArea()
-        self.area_stanze.setMaximumWidth(300)
-        self.area_stanze.setWidgetResizable(True)
+        self.area_ogg = QScrollArea()
+        self.area_ogg.setWidgetResizable(True)
+
         self.scroll_content_stanze = QWidget()
         self.scroll_content_stanze.setObjectName("wid")
-        self.v_layout_stanze = QVBoxLayout(self.scroll_content_stanze)
+
+        self.v_layout_stanze = QVBoxLayout(self.area_ogg)
         self.v_layout_stanze.setContentsMargins(10, 10, 10, 10)
-        self.area_stanze.setWidget(self.scroll_content_stanze)
-        self.main_layout.addWidget(self.area_stanze)
+        self.area_ogg.setWidget(self.scroll_content_stanze)
 
-        # Aggiunge le stanze alla scroll area
-        self.populate_stanze()
+        h0 = QVBoxLayout()
+        titolo_oggi = QLabel("ULITME 24 ORE")
+        titolo_oggi.setObjectName("titolo")
+        titolo_oggi.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        h0.addWidget(titolo_oggi)
+        h0.addWidget(self.area_ogg)
+
+        self.main_layout.addLayout(h0)
+
+        
         # Area per i sensori attivi della stanza selezionata
         self.scroll_content_sensori = QWidget()
         self.scroll_content_sensori.setObjectName("wid")
         self.h_layout_sensori = QVBoxLayout(self.scroll_content_sensori)
         self.h_layout_sensori.setContentsMargins(10, 10, 10, 10)
-        self.area_sensori = QScrollArea()
+        self.area_all = QScrollArea()
         
-        self.area_sensori.setWidgetResizable(True)
-        self.area_sensori.setWidget(self.scroll_content_sensori)
-        self.main_layout.addWidget(self.area_sensori)
+        self.area_all.setWidgetResizable(True)
+        self.area_all.setWidget(self.scroll_content_sensori)
+        
+        h1 = QVBoxLayout()
+        titolo_all = QLabel("TUTTI I RILEVAMENTI")
+        titolo_all.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        titolo_all.setObjectName("titolo")
 
+        h1.addWidget(titolo_all)
+        h1.addWidget(self.area_all)
+
+        self.main_layout.addLayout(h1)
+
+        
 
     def clear_layout(self, layout):
         log_file(350)  # Svuotamento del layout
@@ -80,7 +99,7 @@ class Rilevamenti_page(QWidget):
 
     def load_stylesheet(self):
         log_file(370)  # Caricamento del file di stile
-        file = QFile(f.get_style("stanze.qss"))
+        file = QFile(f.get_style("rilevamenti.qss"))
         if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
             stream = QTextStream(file)
             style_sheet = stream.readAll()

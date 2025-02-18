@@ -24,7 +24,8 @@ from PAGE import (
      impostazioni_page as impo , 
      stanze_page as stanze,
      sensori_page as sensori, 
-     tastierino_dialog as tastierino
+     tastierino_dialog as tastierino,
+     rilevamenti_page as rilevamenti
 )
 import threading
 import time
@@ -193,6 +194,9 @@ class MainWindows(QMainWindow):
             self.tastierino_form_page = tastierino.Tastierino(self, self.header)
             self.main_layout.addWidget(self.tastierino_form_page)
 
+            # PAGINA index 6 - Pagina dei rilevamenti
+            self.rilevamenti = rilevamenti.Rilevamenti_page(self, self.header)
+            self.main_layout.addWidget(self.rilevamenti)
             
 
             # Connetti i segnali del form del sensore
