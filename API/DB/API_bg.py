@@ -110,7 +110,7 @@ def get_sensor(persistent_conn, sensor_pk=None):
     except sqlite3.Error as e:
         print(f"error : {e}")
 
-@db_enqueue(priority=1)
+
 def _add_log(persistent_conn, sensor_pk):
     """
     aggiungi alla tabella log I valori di errrore

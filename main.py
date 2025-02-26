@@ -380,19 +380,18 @@ if __name__ == "__main__":
     flask_thread.start()
     
 
-    #time.sleep(10)
+    time.sleep(10)
    
-    while(True):
-        time.sleep(10)
-    #db_path = f.get_db()  
-    #start_sqlite_web(db_path, port=8080)
+    
+    db_path = f.get_db()  
+    start_sqlite_web(db_path, port=8080)
 
-    #app = QApplication(sys.argv)
-    #window = MainWindows(flask_thread)
-    #window.show()
+    app = QApplication(sys.argv)
+    window = MainWindows(flask_thread)
+    window.show()
 
-    ##app.aboutToQuit.connect(db_stop)
+    #app.aboutToQuit.connect(db_stop)
 
 
-    #sys.exit(app.exec())
+    sys.exit(app.exec())
    
