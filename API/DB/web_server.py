@@ -178,6 +178,6 @@ def ws_ui_to_process_update(ws):
 
 def run_flask_app():
     # Avvio di un server gevent WSGI che supporta WebSocket
-    app.run(host="0.0.0.0", port=5001, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=5001)
 
     print("Server in ascolto su 0.0.0.0:5001...")

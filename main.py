@@ -1,5 +1,5 @@
 from PyQt6.QtGui import  QColor
-from PyQt6.QtCore import Qt, pyqtSignal, QThread
+from PyQt6.QtCore import Qt, pyqtSignal, QThread, QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
 
 import os
@@ -107,7 +107,7 @@ class MainWindows(QMainWindow):
     signal_sensor_data_loaded = pyqtSignal(o.Sensore, int)  # Passa i dati del sensore e la sensor_pk
     signal_sensor_saved = pyqtSignal(bool)  # Segnale per indicare il completamento del salvataggio del sensore
 
-    def __init__(self):
+    def __init__(self, flask_thread):
         # Dentro la classe Sensori_Page
         super().__init__()
         
@@ -115,12 +115,12 @@ class MainWindows(QMainWindow):
         log.setup_logger()
         # db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
 
-        self.listener = WebSocketListener()
+        #self.listener = WebSocketListener()
 
         # Collega il segnale update_received al metodo handle_update
-        self.listener.update_received.connect(self.handle_update)
+        #self.listener.update_received.connect(self.handle_update)
 
-        self.listener.start()
+        #self.listener.start()
 
         # self.listener.update_sending.emit(1, "del") #delete
         # self.listener.update_sending.emit(1, "mod") #modificato
@@ -135,8 +135,26 @@ class MainWindows(QMainWindow):
         
         self.create_layout()
         self.inizializzaUI()
+        self.flask_thread = flask_thread
+        print("Il thread Flask è vivo?", self.flask_thread.is_alive())
+
+
+         # Avvia un QTimer che verifica periodicamente se il thread Flask è vivo
+        self.thread_check_timer = QTimer(self)
+        self.thread_check_timer.timeout.connect(self.check_flask_thread_alive)
+        self.thread_check_timer.start(2000)  # ogni 2 secondi
+
+    def check_flask_thread_alive(self):
+        """Verifica se il thread Flask è ancora vivo."""
+        if self.flask_thread.is_alive():
+            print("Il thread Flask è ancora vivo.")
+        else:
+            print("Il thread Flask è morto!")
+            # Se desideri fare qualcosa in caso di thread morto, fallo qui
+            # Ad esempio: avviare un nuovo thread, mostrare un messaggio all'utente, ecc.
 
     def handle_update(self, data):
+        print("Il thread Flask è vivo?", self.flask_thread.is_alive())
         # Aggiorna la UI o gestisci i dati in modo thread-safe
         self.lettura_valori()
         self.senso_page.init_sensors()
@@ -145,7 +163,9 @@ class MainWindows(QMainWindow):
 
 
     def lettura_valori(self):
-        controllo_valori()
+        ris = controllo_valori()
+        if ris == 1:
+            self.home_page.allarme()
 
 
     def closeEvent(self, event):
@@ -360,18 +380,19 @@ if __name__ == "__main__":
     flask_thread.start()
     
 
-    time.sleep(10)
+    #time.sleep(10)
    
- 
-    db_path = f.get_db()  
-    start_sqlite_web(db_path, port=8080)
+    while(True):
+        time.sleep(10)
+    #db_path = f.get_db()  
+    #start_sqlite_web(db_path, port=8080)
 
-    app = QApplication(sys.argv)
-    window = MainWindows()
-    window.show()
+    #app = QApplication(sys.argv)
+    #window = MainWindows(flask_thread)
+    #window.show()
 
-    #app.aboutToQuit.connect(db_stop)
+    ##app.aboutToQuit.connect(db_stop)
 
 
-    sys.exit(app.exec())
+    #sys.exit(app.exec())
    

@@ -60,6 +60,7 @@ def add_value(persistent_conn, sensor_pk, value, allarme):
     :param allarme: Stato di allarme (0 o 1).
     :return: 1 se l'operazione è andata a buon fine.
     """
+    print("Add_Value")
     log_file(2002)  # Log di inizio
     try:
         c = persistent_conn.cursor()
@@ -69,16 +70,19 @@ def add_value(persistent_conn, sensor_pk, value, allarme):
                      SET Value = ?, Data = ?, Allarme = ?
                      WHERE SensorPk = ?''', 
                   (value, time.strftime("%Y-%m-%d %H:%M:%S"), allarme, sensor_pk))
-        
+        print("Update__valori")
         # Se l'allarme è 1, aggiorna la tabella SISTEMA solo se il sensore è attivo
         if allarme == 1:
+            print("allarme = 1")
             c.execute("SELECT Stato FROM SENSORI WHERE SensorPk = ?", (sensor_pk,))
             ris = c.fetchone()  # Recupera il record del sensore
             if ris is not None and ris[0] == 1:
+                print("STATO 1")
                 c.execute('''UPDATE SISTEMA 
                              SET Allarme = 1 
                              WHERE Id = 1''')
-        
+                _add_log(persistent_conn=persistent_conn, sensor_pk=sensor_pk)
+        print("FINITO")
         persistent_conn.commit()
         log_file(2102)  # Log di successo
         return 1
@@ -106,6 +110,27 @@ def get_sensor(persistent_conn, sensor_pk=None):
     except sqlite3.Error as e:
         print(f"error : {e}")
 
+@db_enqueue(priority=1)
+def _add_log(persistent_conn, sensor_pk):
+    """
+    aggiungi alla tabella log I valori di errrore
+    
+    :param sensor_pk: (Opzionale) ID del sensore da recuperare. Se None, recupera tutti i sensori.
+    :return: Una lista di dict contenente i dati dei sensori.
+    """
+
+    log_file(2001)  # Log di inizio
+    try:
+        c = persistent_conn.cursor()
+          # Crea una riga corrispondente nella tabella VALORI
+        c.execute('''INSERT INTO LOG (SensorIf, Data) 
+                     VALUES (?, ?, ?, ?)''', (sensor_pk, time.strftime("%Y-%m-%d %H:%M:%S")))
+        
+        persistent_conn.commit()
+        log_file(2102)  # Log di successo
+        return 1
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
 @db_enqueue(priority=1)
 def controllo_valori(persistent_conn):
@@ -118,9 +143,13 @@ def controllo_valori(persistent_conn):
         c = persistent_conn.cursor()
 
         # Get all active sensors
-        c.execute("SELECT SensorPk, Soglia FROM SENSORI WHERE Stato = 1")
-        sensors = c.fetchall()
-
+        c.execute("SELECT Allarme FROM SISTEMA WHERE Id = 1")
+        ris = c.fetchone()  # Recupera il record del sensore
+        if ris is not None and ris[0] == 1:
+            return 1
+        else:
+            return 0
         # TODO
     except sqlite3.Error as e:
         print(f"error : {e}")
+        return 0

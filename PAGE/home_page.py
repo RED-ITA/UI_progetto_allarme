@@ -187,3 +187,13 @@ class Home_Page(QWidget):
         print("rilevamenti")
         self.header.set_tipo(6)
         self.master.change_page(6)
+
+    def allarme(self):
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QColor.fromRgb(241, 0, 0))
+        self.setPalette(p)
+        # Load the stylesheet
+        self.load_stylesheet()
+
+        # Log background color setting
+        log_file(4, "home_page_background_set_allarme")
