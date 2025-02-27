@@ -117,13 +117,14 @@ def _add_log(persistent_conn, sensor_pk):
     
     :param sensor_pk: (Opzionale) ID del sensore da recuperare. Se None, recupera tutti i sensori.
     :return: Una lista di dict contenente i dati dei sensori.
+
     """
 
     log_file(2001)  # Log di inizio
     try:
         c = persistent_conn.cursor()
           # Crea una riga corrispondente nella tabella VALORI
-        c.execute('''INSERT INTO LOG (SensorIf, Data) 
+        c.execute('''INSERT INTO LOG (SensorId, Data) 
                      VALUES (?, ?, ?, ?)''', (sensor_pk, time.strftime("%Y-%m-%d %H:%M:%S")))
         
         persistent_conn.commit()

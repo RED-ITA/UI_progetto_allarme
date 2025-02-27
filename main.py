@@ -383,8 +383,8 @@ if __name__ == "__main__":
     time.sleep(10)
    
     
-    db_path = f.get_db()  
-    start_sqlite_web(db_path, port=8080)
+    #db_path = f.get_db()  
+    #start_sqlite_web(db_path, port=8080)
 
     app = QApplication(sys.argv)
     window = MainWindows(flask_thread)
