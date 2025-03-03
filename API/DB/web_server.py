@@ -1,6 +1,5 @@
-import gevent
-import gevent.monkey
-gevent.monkey.patch_all()  # Patching per abilitare il cooperative multitasking su socket, etc.
+
+
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
@@ -178,6 +177,10 @@ def ws_ui_to_process_update(ws):
 
 def run_flask_app():
     # Avvio di un server gevent WSGI che supporta WebSocket
-    app.run(host="0.0.0.0", port=5001)
-
+    server = pywsgi.WSGIServer(
+        ('0.0.0.0', 5001),  # indirizzo e porta
+        app,                # la tua app Flask
+        handler_class=WebSocketHandler  # gestore per WebSocket
+    )
+    server.serve_forever()
     print("Server in ascolto su 0.0.0.0:5001...")

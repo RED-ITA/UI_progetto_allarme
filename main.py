@@ -1,3 +1,4 @@
+
 from PyQt6.QtGui import  QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QThread, QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
@@ -32,76 +33,73 @@ import time
 from websocket import WebSocketApp
 import json 
 import subprocess
+import websocket  # pip install websocket-client
 
 class WebSocketListener(QThread):
-    # Segnali PyQt
-    update_received = pyqtSignal(dict)
-    update_sending = pyqtSignal(int, str)
+    # Questo segnale viene emesso quando si riceve un messaggio "process_to_ui_update"
+    process_to_ui_update_signal = pyqtSignal(str)
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, ws_url, parent=None):
+        super(WebSocketListener, self).__init__(parent)
+        self.ws_url = ws_url
         self.ws = None
-        # Quando altri componenti emettono "update_sending",
-        # questo slot invierà il messaggio al server WebSocket.
-        self.update_sending.connect(self.send_update_to_api)
-
-    def on_open(self, ws):
-        print("Connessione WebSocket aperta")
-
-    def on_message(self, ws, message):
-        print("Messaggio ricevuto dal server:", message)
-        
-        # Se il server invia JSON, parse l’eventuale JSON:
-        # Esempio generico: data = json.loads(message)
-        # e poi emetti un segnale con i dati
-        try:
-            data = json.loads(message)
-            self.update_received.emit(data)
-        except json.JSONDecodeError:
-            # Se non è JSON, fai altre gestione
-            # oppure invia come stringa
-            self.update_received.emit({"raw": message})
-
-    def on_error(self, ws, error):
-        print("Errore WebSocket:", error)
-
-    def on_close(self, ws, close_status_code, close_msg):
-        print("Connessione WebSocket chiusa")
+        self.running = True
 
     def run(self):
-        # Inizializza la WebSocketApp puntando all'endpoint del tuo server
-        self.ws = WebSocketApp(
-            "ws://localhost:5001/ui_to_process_update",  # <--- URl WebSocket (non http)
-            on_open=self.on_open,
-            on_message=self.on_message,
-            on_error=self.on_error,
-            on_close=self.on_close
+        # Callback per i messaggi in arrivo dalla connessione WebSocket
+        def on_message(ws, message):
+            # Il thread controlla e risponde solo a "process_to_ui_update"
+            if "process_to_ui_update" in message:
+                self.process_to_ui_update_signal.emit(message)
+
+        def on_error(ws, error):
+            print("Errore WebSocket:", error)
+
+        def on_close(ws, close_status_code, close_msg):
+            print("Connessione WebSocket chiusa")
+
+        def on_open(ws):
+            print("Connessione WebSocket aperta")
+
+        # Creazione dell'istanza WebSocketApp
+        self.ws = websocket.WebSocketApp(
+            self.ws_url,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close
         )
+        self.ws.on_open = on_open
 
-        # run_forever() si blocca finché la connessione è attiva.
-        # Viene eseguito nel contesto di questo QThread, quindi non bloccherà la UI.
-        self.ws.run_forever()
+        # Esecuzione della WebSocket in un thread separato per non bloccare il QThread
+        ws_thread = threading.Thread(target=self.ws.run_forever)
+        ws_thread.daemon = True
+        ws_thread.start()
 
-    def send_update_to_api(self, sensor_id, tipo):
-        """
-        Metodo connesso allo signal `update_sending`, 
-        che invia un messaggio WebSocket al server.
-        """
+        # Mantieni il thread attivo finché running è True
+        while self.running:
+            time.sleep(0.1)
+
         if self.ws:
-            # Costruiamo un JSON da inviare (struttura a piacere)
-            msg_dict = {
-                "id": sensor_id,
-                "tipo": tipo
-            }
-            # Convertilo in stringa
-            message = json.dumps(msg_dict)
+            self.ws.close()
 
-            # Manda il messaggio via WebSocket
+    def send_ui_to_process_update(self, message):
+        """
+        Metodo per inviare un messaggio "ui_to_process_update" al server.
+        Il QThread non ascolta questi messaggi, ma li invia.
+        """
+        if self.ws and self.ws.sock and self.ws.sock.connected:
             try:
                 self.ws.send(message)
-                print("Messaggio inviato al server:", message)
+                print("Messaggio inviato:", message)
             except Exception as e:
-                print("Errore inviando messaggio WS:", e)
+                print("Errore nell'invio del messaggio:", e)
+        else:
+            print("WebSocket non connesso. Impossibile inviare il messaggio.")
+
+    def stop(self):
+        self.running = False
+        self.wait()
+
 
 class MainWindows(QMainWindow):
     signal_sensor_data_loaded = pyqtSignal(o.Sensore, int)  # Passa i dati del sensore e la sensor_pk
@@ -383,8 +381,8 @@ if __name__ == "__main__":
     time.sleep(10)
    
     
-    #db_path = f.get_db()  
-    #start_sqlite_web(db_path, port=8080)
+    db_path = f.get_db()  
+    start_sqlite_web(db_path, port=8080)
 
     app = QApplication(sys.argv)
     window = MainWindows(flask_thread)
