@@ -78,10 +78,13 @@ def add_value(persistent_conn, sensor_pk, value, allarme):
             ris = c.fetchone()  # Recupera il record del sensore
             if ris is not None and ris[0] == 1:
                 print("STATO 1")
-                c.execute('''UPDATE SISTEMA 
-                             SET Allarme = 1 
-                             WHERE Id = 1''')
-                _add_log(persistent_conn=persistent_conn, sensor_pk=sensor_pk)
+                c.execute("SELECT Stato FROM SISTEMA WHERE Id = 1")
+                ris = c.fetchone()  # Recupera il record del sensore
+                if ris is not None and ris[0] == 1:
+                    c.execute('''UPDATE SISTEMA 
+                                 SET Allarme = 1 
+                                 WHERE Id = 1''')
+                    _add_log(persistent_conn=persistent_conn, sensor_pk=sensor_pk)
         print("FINITO")
         persistent_conn.commit()
         log_file(2102)  # Log di successo

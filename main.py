@@ -37,11 +37,12 @@ import websocket  # pip install websocket-client
 
 class WebSocketListener(QThread):
     # Questo segnale viene emesso quando si riceve un messaggio "process_to_ui_update"
-    process_to_ui_update_signal = pyqtSignal(str)
+    update_received = pyqtSignal(str)
+    update_sending = pyqtSignal(int, str)  # segnale B
     
-    def __init__(self, ws_url, parent=None):
+    def __init__(self, parent=None):
         super(WebSocketListener, self).__init__(parent)
-        self.ws_url = ws_url
+        self.ws_url = "ws://127.0.0.1:5001"
         self.ws = None
         self.running = True
 
@@ -113,15 +114,19 @@ class MainWindows(QMainWindow):
         log.setup_logger()
         # db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
 
-        #self.listener = WebSocketListener()
+        self.listener = WebSocketListener()
 
         # Collega il segnale update_received al metodo handle_update
-        #self.listener.update_received.connect(self.handle_update)
+        
+        try:
+            self.listener.update_received.connect(self.handle_update)
 
-        #self.listener.start()
+            self.listener.start()
 
-        # self.listener.update_sending.emit(1, "del") #delete
-        # self.listener.update_sending.emit(1, "mod") #modificato
+            self.listener.update_sending.emit(1, "del") #delete 
+            self.listener.update_sending.emit(1, "mod") #modificato
+        except Exception as e:
+            print(e)
 
         self.setWindowTitle("ALLARME APP")
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -154,6 +159,7 @@ class MainWindows(QMainWindow):
     def handle_update(self, data):
         print("Il thread Flask è vivo?", self.flask_thread.is_alive())
         # Aggiorna la UI o gestisci i dati in modo thread-safe
+        print("lettura")
         self.lettura_valori()
         self.senso_page.init_sensors()
         self.senso_page.refresh_ui()
@@ -163,6 +169,7 @@ class MainWindows(QMainWindow):
     def lettura_valori(self):
         ris = controllo_valori()
         if ris == 1:
+            print("allarme")
             self.home_page.allarme()
 
 

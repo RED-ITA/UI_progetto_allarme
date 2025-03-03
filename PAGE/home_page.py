@@ -194,6 +194,7 @@ class Home_Page(QWidget):
         self.setPalette(p)
         # Load the stylesheet
         self.load_stylesheet()
+        self.update()
 
         # Log background color setting
         log_file(4, "home_page_background_set_allarme")
