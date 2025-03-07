@@ -19,7 +19,6 @@ def create_db():
             # Create the SENSORI table
             c.execute('''CREATE TABLE IF NOT EXISTS SENSORI (
                             SensorPk INTEGER PRIMARY KEY AUTOINCREMENT,
-                            Id INTEGER, 
                             Tipo INTEGER, 
                             Data TEXT, 
                             Stanza TEXT, 
@@ -27,11 +26,16 @@ def create_db():
                             Error INTEGER,
                             Stato INTEGER  -- 1 = Active, 0 = Inactive
                         )''')
+            
 
             # Create the VALORI table
             c.execute('''CREATE TABLE IF NOT EXISTS VALORI (
-                            Id INTEGER PRIMARY KEY, 
-                            Value INTEGER
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            SensorPk INTEGER,
+                            Value INTEGER,
+                            Data TEXT,
+                            Allarme INTEGER, 
+                            FOREIGN KEY(SensorPk) REFERENCES SENSORI(SensorPk)
                         )''')
             
             # Create the SISTEMA table
@@ -43,8 +47,11 @@ def create_db():
                             Error INTEGER
                         )''')
             
-            c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Aggiorna, Error) 
-                         VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
+            c.execute('SELECT COUNT(*) FROM SISTEMA')
+            count = c.fetchone()[0]
+            if count == 0:
+                c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Aggiorna, Error) 
+                             VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
 
             # Create the LOG table with an auto-incrementing primary key
             c.execute('''CREATE TABLE IF NOT EXISTS LOG (
@@ -70,6 +77,10 @@ def create_db():
             c.execute('''CREATE TABLE IF NOT EXISTS STANZE (
                             Nome TEXT PRIMARY KEY
                         )''')
+            
+            
+            
+
 
             conn.commit()
             conn.close()

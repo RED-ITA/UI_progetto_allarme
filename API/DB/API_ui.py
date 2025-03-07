@@ -10,390 +10,234 @@ from queue import Queue
 import functools
 import concurrent.futures
 import time
-
+from datetime import datetime
+from API.DB.queue_manager import db_enqueue
 from OBJ import OBJ_UI_Sensore as o
-
-# Number of retries and delay between retries
-MAX_RETRIES = 10
-RETRY_DELAY = 0.1  # in seconds
 
 from concurrent.futures import ThreadPoolExecutor
 
-class QueueProcessor:
-    def __init__(self):
-        log_file(1000, "queue processor (config 8)")
-        self.executor = ThreadPoolExecutor(max_workers=8)  # Puoi regolare il numero di worker in base alle tue esigenze
-        self.lock = threading.Lock()
-    
-    def submit_task(self, func, *args, **kwargs):
-        future = self.executor.submit(func, *args, **kwargs)
-        future.add_done_callback(self.handle_task_completion)
-        return future
-
-    def handle_task_completion(self, future):
-        try:
-            result = future.result()
-            log_file(1002, f"Task completato con risultato: {result}")
-        except Exception as e:
-            log_file(1001, f"Errore durante l'esecuzione del task: {e}")
-
-    def shutdown(self):
-        self.executor.shutdown(wait=True)
-
-# Mantieni il lock esistente
-_modbus_lock = threading.Lock()
-
-_queue_processor = QueueProcessor()
-
-def run_async(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        future = None
-        try:
-            log_file(1000, f"DEBUG DECORATOR | {func.__name__} chiamato con args: {args}, kwargs: {kwargs}")
-            # Usa QueueProcessor per inviare il task
-            future = _queue_processor.submit_task(func, *args, **kwargs)
-            log_file(1002, f"DEBUG DECORATOR | {func.__name__} messo in coda con Future: {future}")
-            
-            # Attendi il completamento del future con timeout
-            return future
-        except Exception as e:
-            log_file(1001, f"ERROR DECORATOR | Errore nel mettere in coda {func.__name__}: {str(e)}")
-            if future:
-                future.set_exception(e)
-            return None
-        
-    return wrapper
-
-# Utilizzo del decoratore per rendere asincrone le funzioni
-@run_async
-def add_sensor(sensor_data):
+@db_enqueue(priority=1)
+def add_sensor(persistent_conn, sensor_data):
     log_file(2001)
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
+    try:
+        c = persistent_conn.cursor()
+        parameters = sensor_data + (0,)  # Aggiunge Stato = 1
+        c.execute('''INSERT INTO SENSORI (Tipo, Data, Stanza, Soglia, Error, Stato) 
+                     VALUES (?, ?, ?, ?, ?, ?)''', parameters)
+        
+        c.execute('''UPDATE SISTEMA 
+                     SET Aggiorna = ?
+                     WHERE Id = ?''', (1, 1))
+        persistent_conn.commit()
+        log_file(2101)
+        return 1  # Success
+    except sqlite3.Error as e:
+        log_file(401, f"Errore nell'aggiunta del sensore: {e}")
+        return 0
 
-            parameters = sensor_data + (1,)  # Aggiunge Stato = 1
-            c.execute('''INSERT INTO SENSORI (Id, Tipo, Data, Stanza, Soglia, Error, Stato) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?)''', parameters)
-            
-            c.execute('''UPDATE SISTEMA 
-                         SET Aggiorna = ?
-                         WHERE Id = ?''', (1, 1))
-
-            conn.commit()
-            conn.close()
-            log_file(2101)
-            return 1  # Success
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2400, e)
-                return 0  # Failure
-        except sqlite3.IntegrityError as e:
-            log_file(2402, e)
-            return 0  # Failure
-        except Exception as e:
-            log_file(2401, e)
-            return 0  # Failure
-    log_file(2400)
-    return 0  # Failure after retries
-
-@run_async
-def edit_sensor(sensor_id, new_data):
+@db_enqueue(priority=1)
+def edit_sensor(persistent_conn, sensor_id, new_data):
     log_file(2002, f"Evento su componente specifico: {sensor_id}")
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
+    try:
+        c = persistent_conn.cursor()
+        c.execute('''UPDATE SENSORI 
+                     SET Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Stato = ? 
+                     WHERE SensorPk = ?''', (*new_data, sensor_id))
+        
+        c.execute('''UPDATE SISTEMA 
+                     SET Aggiorna = ?
+                     WHERE Id = ?''', (1, 1))
+        persistent_conn.commit()
+        log_file(2102, f"Evento completato su componente specifico: {sensor_id}")
+        return 1  # Success
+    except sqlite3.Error as e:
+        log_file(2411, f"Errore nella modifica del sensore {sensor_id}: {e}")
+        return 0
 
-            c.execute('''UPDATE SENSORI 
-                         SET Id = ?, Tipo = ?, Data = ?, Stanza = ?, Soglia = ?, Error = ? 
-                         WHERE SensorPk = ?''', (*new_data, sensor_id))
-            
-            c.execute('''UPDATE SISTEMA 
-                         SET Aggiorna = ?
-                         WHERE Id = ?''', (1, 1))
-
-            conn.commit()
-            conn.close()
-            log_file(2102, f"Evento completato su componente specifico: {sensor_id}")
-            return 1  # Success
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2401, e)
-                return 0  # Failure
-        except Exception as e:
-            log_file(2401, e)
-            return 0  # Failure
-    log_file(2400)
-    return 0  # Failure after retries
-
-@run_async
-def delete_sensor(sensor_pk):
+@db_enqueue(priority=1)
+def delete_sensor(persistent_conn, sensor_pk):
     log_file(2003, f"Evento su componente specifico: {sensor_pk}")
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
+    try:
+        c = persistent_conn.cursor()
+        # Elimina il sensore
+        c.execute('''DELETE FROM SENSORI 
+                     WHERE SensorPk = ?''', (sensor_pk,))
+        
+        c.execute('''UPDATE SISTEMA 
+                     SET Aggiorna = ? 
+                     WHERE Id = ?''', (1, 1))
+        persistent_conn.commit()
+        log_file(2103, f"Evento completato su componente specifico: {sensor_pk}")
+        return 1  # Success
+    except sqlite3.Error as e:
+        log_file(2412, f"Errore nell'eliminazione del sensore {sensor_pk}: {e}")
+        return 0
 
-            # Mark sensor as inactive
-            c.execute('''UPDATE SENSORI 
-                         SET Stato = ? 
-                         WHERE SensorPk = ?''', (0, sensor_pk))
-            
-            c.execute('''UPDATE SISTEMA 
-                         SET Aggiorna = ? 
-                         WHERE Id = ?''', (1, 1))
-
-            conn.commit()
-            conn.close()
-            log_file(2103, f"Evento completato su componente specifico: {sensor_pk}")
-            return 1  # Success
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2401, e)
-                return 0  # Failure
-        except Exception as e:
-            log_file(2401, e)
-            return 0  # Failure
-    log_file(2400)
-    return 0  # Failure after retries
-
-@run_async
-def get_all_stanze():
+@db_enqueue(priority=1)
+def get_all_stanze(persistent_conn):
     log_file(2004)
     try:
-        conn = sqlite3.connect(f.get_db())
-        c = conn.cursor()
-
+        c = persistent_conn.cursor()
         c.execute('SELECT * FROM STANZE')
         stanze = c.fetchall()
-
-        conn.close()
         log_file(2100)
         return stanze
-    except Exception as e:
-        log_file(2401, e)
+    except sqlite3.Error as e:
+        log_file(2413, f"Errore nel recupero delle stanze: {e}")
         return []
 
-@run_async
-def get_all_sensori():
+@db_enqueue(priority=1)
+def get_all_sensori(persistent_conn):
     log_file(2005)
     try:
-        conn = sqlite3.connect(f.get_db())
-        c = conn.cursor()
-
+        c = persistent_conn.cursor()
         c.execute('SELECT * FROM SENSORI')
         sensori = c.fetchall()
-
-        conn.close()
         log_file(2100)
         return sensori
-    except Exception as e:
-        log_file(2400, e)
+    except sqlite3.Error as e:
+        log_file(2414, f"Errore nel recupero dei sensori: {e}")
         return []
 
-@run_async
-def get_all_logs():
+@db_enqueue(priority=1)
+def get_all_logs(persistent_conn):
     log_file(2006)
     try:
-        conn = sqlite3.connect(f.get_db())
-        c = conn.cursor()
-
+        c = persistent_conn.cursor()
         c.execute('''
             SELECT LOG.LogId, LOG.SensorId, LOG.Data, SENSORI.Tipo, SENSORI.Stanza
             FROM LOG
             LEFT JOIN SENSORI ON LOG.SensorId = SENSORI.SensorPk
         ''')
-        
         logs = c.fetchall()
-        conn.close()
         log_file(2100)
         return logs
-    except Exception as e:
-        log_file(2400, e)
+    except sqlite3.Error as e:
+        log_file(2415, f"Errore nel recupero dei log: {e}")
         return []
 
-@run_async
-def get_sensor_by_pk(sensor_pk):
-    log_file(2007, f"Evento completato su componente specifico: {sensor_pk}")
+@db_enqueue(priority=1)
+def get_sensor_by_pk(persistent_conn, sensor_pk):
+    log_file(2007, f"Evento su componente specifico: {sensor_pk}")
     try:
-        conn = sqlite3.connect(f.get_db())
-        c = conn.cursor()
-
+        c = persistent_conn.cursor()
         c.execute('SELECT * FROM SENSORI WHERE SensorPk = ?', (sensor_pk,))
         data = c.fetchone()
-
-        conn.close()
-
         if data:
             log_file(2100)
             sensor = o.Sensore(
                 SensorePk=data[0],
-                Id=data[1],
-                Tipo=data[2],
-                Data=data[3],
-                Stanza=data[4],
-                Soglia=data[5],
-                Error=data[6],
-                Stato=data[7]
+                Tipo=data[1],
+                Data=data[2],
+                Stanza=data[3],
+                Soglia=data[4],
+                Error=data[5],
+                Stato=data[6]
             )
             return sensor
         else:
-            log_file(2401)
+            log_file(2401, f"Sensor con PK {sensor_pk} non trovato.")
             return None
-    except Exception as e:
-        log_file(2400, e)
+    except sqlite3.Error as e:
+        log_file(2416, f"Errore nel recupero del sensore {sensor_pk}: {e}")
         return None
 
-@run_async
-def add_stanza(nome_stanza):
+@db_enqueue(priority=1)
+def add_stanza(persistent_conn, nome_stanza):
     log_file(2008, f"Evento su componente specifico: {nome_stanza}")
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
+    try:
+        c = persistent_conn.cursor()
+        # Inserisce una nuova stanza
+        c.execute('''INSERT INTO STANZE (Nome) VALUES (?)''', (nome_stanza,))
+        persistent_conn.commit()
+        log_file(2104, f"Evento aggiunta stanza: {nome_stanza}")
+        return 1  # Success
+    except sqlite3.Error as e:
+        log_file(402, f"Errore nell'aggiunta della stanza {nome_stanza}: {e}")
+        return 0
 
-            # Inserisce una nuova stanza
-            c.execute('''INSERT INTO STANZE (Nome) VALUES (?)''', (nome_stanza,))
+@db_enqueue(priority=1)
+def get_sensori_by_stanza(persistent_conn, stanza_nome):
+    log_file(2007, f"Evento su componente specifico: {stanza_nome}")
+    try:
+        c = persistent_conn.cursor()
+        c.execute('SELECT * FROM SENSORI WHERE Stanza = ? AND Stato = 1', (stanza_nome,))
+        sensori = c.fetchall()
+        log_file(2100)
+        return sensori
+    except sqlite3.Error as e:
+        log_file(2417, f"Errore nel recupero dei sensori per la stanza {stanza_nome}: {e}")
+        return []
 
-            conn.commit()
-            conn.close()
-            log_file(2104, f"Evento aggiunta stanza: {nome_stanza}")
-            return 1  # Success
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2401, e)
-                return 0  # Failure
-        except sqlite3.IntegrityError as e:
-            log_file(2402, e)
-            return 0  # Failure
-        except Exception as e:
-            log_file(2400, e)
-            return 0  # Failure
-    log_file(2400)
-    return 0  # Failure after retries
-
-@run_async
-def get_sensori_by_stanza(stanza_nome):
-    log_file(2007, f"Evento completato su componente specifico: {stanza_nome}")
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
-
-            c.execute('SELECT * FROM SENSORI WHERE Stanza = ? AND Stato = 1', (stanza_nome,))
-            sensori = c.fetchall()
-
-            conn.close()
-            log_file(2100)
-            return sensori
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2400, e)
-                return []
-        except Exception as e:
-            log_file(2407, e)
-            return []  # Failure
-    log_file(2400)
-    return []  # Failure after retries
-
-@run_async
-def aggiungi_forzatura(data):
+@db_enqueue(priority=1)
+def aggiungi_forzatura(persistent_conn):
+    data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_file(2011, f": {data}")
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
+    try:
+        c = persistent_conn.cursor()
+        # Inserisce una nuova entry in FORZATURA con la data corrente
+        c.execute('''INSERT INTO FORZATURA (Data) VALUES (?)''', (data,))
+        persistent_conn.commit()
+        log_file(2109, f": {data}")
+        return 1  # Success
+    except sqlite3.Error as e:
+        log_file(2407, f"Errore nel salvataggio della forzatura: {e}")
+        return 0
 
-            # Insert new forzatura entry with date
-            c.execute('''INSERT INTO FORZATURA (Data) VALUES (?)''', (data,))
-            
-            conn.commit()
-            conn.close()
-            log_file(2109, f": {data}")
-            return 1  # Success
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000, f"Tentativo {attempt + 1}/{MAX_RETRIES}: {e}")
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2401, e)
-                return 0  # Failure
-        except Exception as e:
-            log_file(2407, e)
-            return 0  # Failure
-    log_file(2400)
-    return 0  # Failure after retries
-
-@run_async
-def insert_activity(data_a):
+@db_enqueue(priority=1)
+def insert_activity(persistent_conn):
+    data_a = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_file(2012, f": {data_a}")
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
+    try:
+        cursor = persistent_conn.cursor()
+        # Inserisce una nuova entry in ACTIVITY con la data di accensione
+        cursor.execute('''INSERT INTO ACTIVITY (DataA) VALUES (?)''', (data_a,))
+        cursor.execute("UPDATE SISTEMA SET Stato = 1 WHERE Id = 1")
+        persistent_conn.commit()
+        log_file(2110, f": {data_a}")
+        return 1  # Success
+    except sqlite3.Error as e:
+        log_file(2408, f"Errore nel salvataggio dell'accensione: {e}")
+        return 0
 
-            # Insert new activity entry with access date
-            c.execute('''INSERT INTO ACTIVITY (DataA) VALUES (?)''', (data_a,))
-            
-            conn.commit()
-            conn.close()
-            log_file(2110, f": {data_a}")
-            return 1  # Success
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000)
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2401, e)
-                return 0  # Failure
-        except Exception as e:
-            log_file(2408, e)
-            return 0  # Failure
-    log_file(2400)
-    return 0  # Failure after retries
+@db_enqueue(priority=1)
+def update_activity_shutdown(persistent_conn):
+    # Calcola la data e ora corrente per la disconnessione
+    data_disconnessione = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_file(2013, f": {data_disconnessione}")
+    try:
+        c = persistent_conn.cursor()
+        # Recupera l'ultima entry inserita (supponendo che LogId sia autoincrementale)
+        c.execute('SELECT LogId FROM ACTIVITY ORDER BY LogId DESC LIMIT 1')
+        ultima_entry = c.fetchone()
+        
+        if ultima_entry is None:
+            log_file(2419, "Nessuna entry trovata per l'aggiornamento dell'attività.")
+            return 0  # Nessuna entry da aggiornare
+        
+        log_id = ultima_entry[0]
+        
+        # Aggiorna la colonna della data di disconnessione 
+        c.execute('UPDATE ACTIVITY SET DataS = ? WHERE LogId = ?', (data_disconnessione, log_id))
+        c.execute("UPDATE SISTEMA SET Stato = 0 WHERE Id = 1")
+        c.execute("UPDATE SISTEMA SET Allarme = 0 WHERE Id = 1")
+        persistent_conn.commit()
+        
+        log_file(2111, f": {data_disconnessione}")
+        return 1  # Operazione completata con successo
+    except sqlite3.Error as e:
+        log_file(2409, f"Errore nel salvataggio dello spegnimento: {e}")
+        return 0
 
-@run_async
-def update_activity_shutdown(log_id, data_s):
-    log_file(2013, f": {data_s}")
-    for attempt in range(MAX_RETRIES):
-        try:
-            conn = sqlite3.connect(f.get_db())
-            c = conn.cursor()
-
-            # Update shutdown date for the latest activity entry
-            c.execute('''UPDATE ACTIVITY SET DataS = ? WHERE LogId = ?''', (data_s, log_id))
-            
-            conn.commit()
-            conn.close()
-            log_file(2111, f": {data_s}")
-            return 1  # Success
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                log_file(2000)
-                time.sleep(RETRY_DELAY)
-            else:
-                log_file(2400, e)
-                return 0  # Failure
-        except Exception as e:
-            log_file(2409, e)
-            return 0  # Failure
-    log_file(2400)
-    return 0  # Failure after retries
+@db_enqueue(priority=2)
+def get_all_activities(persistent_conn):
+    try:
+        cursor = persistent_conn.cursor()
+        # Ordinamento per data (dal più recente al più vecchio)
+        query = "SELECT * FROM ACTIVITY ORDER BY DataS DESC"
+        cursor.execute(query)
+        activities = cursor.fetchall()
+        return activities
+    except sqlite3.Error as e:
+        log_file(2418, f"Errore nel recupero delle activity: {e}")
+        return []

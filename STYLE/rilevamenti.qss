@@ -1,0 +1,23 @@
+
+/* Stile per il colore di sfondo della pagina */
+QWidget#wid {
+    background-color: #f1f1f1;
+}
+
+/* Stile per i titoli delle sezioni */
+QLabel#titolo {
+    font-size: 48px;
+    font-weight: bold;
+    margin: 10px 0;
+    color: black;
+}
+
+
+/* Stile per l'area di scorrimento delle stanze */
+QScrollArea {
+    border: none;
+    background-color: #f9f9f9;
+}
+
+
+

@@ -28,8 +28,7 @@ class SensorFormPage(QWidget):
         self.main_layout = QVBoxLayout()
         
         # Esempio di campi del form
-        self.id_field = QLineEdit()
-        self.id_field.setObjectName("idField")
+        
         self.tipo_field = QComboBox()
         self.tipo_field.setObjectName("tipoField")
         self.tipo_field.addItems(["Motion", "Magnetic", "Vibration"])
@@ -80,8 +79,6 @@ class SensorFormPage(QWidget):
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
 
         # Aggiungi i widget al layout
-        self.main_layout.addWidget(QLabel("ID:"))
-        self.main_layout.addWidget(self.id_field)
         self.main_layout.addWidget(QLabel("Tipo:"))
         self.main_layout.addWidget(self.tipo_field)
         self.main_layout.addWidget(QLabel("Data:"))
@@ -109,7 +106,6 @@ class SensorFormPage(QWidget):
         log_file(107)
         # Raccogli i dati e emetti il segnale
         sensor_data = {
-            "Id": self.id_field.text(),
             "Tipo": self.tipo_field.currentIndex(),
             "Data": self.data_field.text(),
             "Stanza": self.stanza_field.currentText(),
@@ -136,7 +132,7 @@ class SensorFormPage(QWidget):
     def load_sensor_data(self, sensor):
         log_file(3, "sensor_form_load_data")
         # Carica i dati del sensore nei campi del form per modifica
-        self.id_field.setText(str(sensor.Id))
+    
         self.tipo_field.setCurrentIndex(sensor.Tipo)
         self.data_field.setText(sensor.Data)
         self.stanza_field.setCurrentText(sensor.Stanza)
@@ -146,12 +142,12 @@ class SensorFormPage(QWidget):
         log_file(200)
         # Ricarica le stanze dal database e aggiorna la combobox
         future = db.get_all_stanze()
-        future.add_done_callback(self.handle_sensor_loaded)
+        self.handle_sensor_loaded(future)
 
     def handle_sensor_loaded(self, future):
         self._log_thread_info("handle_loadedSensor_completata")
         try:
-            risult = future.result()
+            risult = future
             self.loaded_complet.emit(risult)
             log_file(1000, str(risult))
         except Exception as e:

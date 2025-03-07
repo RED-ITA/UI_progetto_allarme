@@ -88,3 +88,7 @@ L’applicazione gestisce diverse schede con ID e funzionamenti differenti, che 
 - **Gestione avanzata degli errori**: sistema di logging dettagliato per monitorare la sincronizzazione e i processi.
 
 
+
+```bash
+    curl -X POST http://localhost:5001/sensor -H "Content-Type: application/json" -d '{"tipo": 1}'
+```

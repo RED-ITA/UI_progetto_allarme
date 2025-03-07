@@ -60,12 +60,12 @@ class Sensori_Page(QWidget):
         log_file(2005)
         # Recupera tutti i sensori dal database in modo asincrono tramite la coda
         future = db_api.get_all_sensori()
-        future.add_done_callback(self.handle_sensor_loaded)
+        self.handle_sensor_loaded(future)
 
     def handle_sensor_loaded(self, future):
         self._log_thread_info("handle_loadedSensor_completata")
         try:
-            risult = future.result()
+            risult = future
             self.loaded_complet.emit(risult)
             log_file(1000, str(risult))
         except Exception as e:
@@ -80,13 +80,12 @@ class Sensori_Page(QWidget):
                 # Crea l'oggetto Sensore con i dati dal database
                 sensor = o.Sensore(
                     SensorePk=data[0],
-                    Id=data[1],
-                    Tipo=data[2],
-                    Data=data[3],
-                    Stanza=data[4],
-                    Soglia=data[5],
-                    Error=data[6],
-                    Stato=data[7]
+                    Tipo=data[1],
+                    Data=data[2],
+                    Stanza=data[3],
+                    Soglia=data[4],
+                    Error=data[5],
+                    Stato=data[6]
                 )
                 self.lista_sensori.append(sensor)
             log_file(1000, "loaded ended")
@@ -208,13 +207,14 @@ class Sensori_Page(QWidget):
 
     def elimina_sensore(self, sensor_pk):
         log_file(100, f" {sensor_pk}")
+        self.master.eliminalo(sensor_pk)
         # Aggiorna lo stato del sensore nel database in modo asincrono tramite la coda
         future = db_api.delete_sensor(sensor_pk=sensor_pk)
-        future.add_done_callback(self.on_delete_sensor_done)
+        self.on_delete_sensor_done(future)
 
     def on_delete_sensor_done(self, result):
         try:
-            if result.result():
+            if result:
                 log_file(2103)
             else:
                 log_file(2400)

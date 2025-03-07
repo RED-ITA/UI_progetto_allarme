@@ -1,5 +1,6 @@
+
 from PyQt6.QtGui import  QColor
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QThread, QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QStackedWidget
 
 import os
@@ -10,6 +11,11 @@ from API.DB import (
     API_generale as db, 
     API_ui as db_api,
 )
+from API.DB.web_server import run_flask_app
+
+from API.DB.queue_manager import init_db_manager
+from API.DB.API_bg import controllo_valori
+from API.DB.API_ui import aggiungi_forzatura, update_activity_shutdown
 from OBJ import OBJ_UI_Sensore as o
 
 from CMP import header as h 
@@ -19,22 +25,109 @@ from PAGE import (
      impostazioni_page as impo , 
      stanze_page as stanze,
      sensori_page as sensori, 
-     tastierino_dialog as tastierino
+     tastierino_dialog as tastierino,
+     rilevamenti_page as rilevamenti
 )
 import threading
+import time
+from websocket import WebSocketApp
+import json 
+import subprocess
+import websocket  # pip install websocket-client
+
+class WebSocketListener(QThread):
+    # Questo segnale viene emesso quando si riceve un messaggio "process_to_ui_update"
+    update_received = pyqtSignal(str)
+    update_sending = pyqtSignal(int, str)  # segnale B
+    
+    def __init__(self, parent=None):
+        super(WebSocketListener, self).__init__(parent)
+        self.ws_url = "ws://127.0.0.1:5001"
+        self.ws = None
+        self.running = True
+
+    def run(self):
+        # Callback per i messaggi in arrivo dalla connessione WebSocket
+        def on_message(ws, message):
+            # Il thread controlla e risponde solo a "process_to_ui_update"
+            if "process_to_ui_update" in message:
+                self.process_to_ui_update_signal.emit(message)
+
+        def on_error(ws, error):
+            print("Errore WebSocket:", error)
+
+        def on_close(ws, close_status_code, close_msg):
+            print("Connessione WebSocket chiusa")
+
+        def on_open(ws):
+            print("Connessione WebSocket aperta")
+
+        # Creazione dell'istanza WebSocketApp
+        self.ws = websocket.WebSocketApp(
+            self.ws_url,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close
+        )
+        self.ws.on_open = on_open
+
+        # Esecuzione della WebSocket in un thread separato per non bloccare il QThread
+        ws_thread = threading.Thread(target=self.ws.run_forever)
+        ws_thread.daemon = True
+        ws_thread.start()
+
+        # Mantieni il thread attivo finché running è True
+        while self.running:
+            time.sleep(0.1)
+
+        if self.ws:
+            self.ws.close()
+
+    def send_ui_to_process_update(self, message):
+        """
+        Metodo per inviare un messaggio "ui_to_process_update" al server.
+        Il QThread non ascolta questi messaggi, ma li invia.
+        """
+        if self.ws and self.ws.sock and self.ws.sock.connected:
+            try:
+                self.ws.send(message)
+                print("Messaggio inviato:", message)
+            except Exception as e:
+                print("Errore nell'invio del messaggio:", e)
+        else:
+            print("WebSocket non connesso. Impossibile inviare il messaggio.")
+
+    def stop(self):
+        self.running = False
+        self.wait()
+
 
 class MainWindows(QMainWindow):
     signal_sensor_data_loaded = pyqtSignal(o.Sensore, int)  # Passa i dati del sensore e la sensor_pk
     signal_sensor_saved = pyqtSignal(bool)  # Segnale per indicare il completamento del salvataggio del sensore
 
-    def __init__(self):
+    def __init__(self, flask_thread):
         # Dentro la classe Sensori_Page
+        super().__init__()
         
 
-        db.create_db()
-        super().__init__()
         log.setup_logger()
+        # db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
+
+        self.listener = WebSocketListener()
+
+        # Collega il segnale update_received al metodo handle_update
         
+        try:
+            self.listener.update_received.connect(self.handle_update)
+
+            self.listener.start()
+
+            self.listener.update_sending.emit(1, "del") #delete 
+            self.listener.update_sending.emit(1, "mod") #modificato
+        except Exception as e:
+            print(e)
+
         self.setWindowTitle("ALLARME APP")
         screen_geometry = QApplication.primaryScreen().geometry()
         self.screen_width = screen_geometry.width()
@@ -45,6 +138,47 @@ class MainWindows(QMainWindow):
         
         self.create_layout()
         self.inizializzaUI()
+        self.flask_thread = flask_thread
+        print("Il thread Flask è vivo?", self.flask_thread.is_alive())
+
+
+         # Avvia un QTimer che verifica periodicamente se il thread Flask è vivo
+        self.thread_check_timer = QTimer(self)
+        self.thread_check_timer.timeout.connect(self.check_flask_thread_alive)
+        self.thread_check_timer.start(2000)  # ogni 2 secondi
+
+    def check_flask_thread_alive(self):
+        """Verifica se il thread Flask è ancora vivo."""
+        if self.flask_thread.is_alive():
+            print("Il thread Flask è ancora vivo.")
+        else:
+            print("Il thread Flask è morto!")
+            # Se desideri fare qualcosa in caso di thread morto, fallo qui
+            # Ad esempio: avviare un nuovo thread, mostrare un messaggio all'utente, ecc.
+
+    def handle_update(self, data):
+        print("Il thread Flask è vivo?", self.flask_thread.is_alive())
+        # Aggiorna la UI o gestisci i dati in modo thread-safe
+        print("lettura")
+        self.lettura_valori()
+        self.senso_page.init_sensors()
+        self.senso_page.refresh_ui()
+        # Inserisci il codice per aggiornare la UI o i componenti qui
+
+
+    def lettura_valori(self):
+        ris = controllo_valori()
+        if ris == 1:
+            print("allarme")
+            self.home_page.allarme()
+
+
+    def closeEvent(self, event):
+        # Chiamata a db_stop prima di chiudere l'applicazione
+        # db_stop()
+        log.log_file(2701, "Chiusura dell'applicazione gestita correttamente")
+        # Continua con l'evento di chiusura standard
+        event.accept()
         
     def create_layout(self):
         try:
@@ -85,6 +219,9 @@ class MainWindows(QMainWindow):
             self.tastierino_form_page = tastierino.Tastierino(self, self.header)
             self.main_layout.addWidget(self.tastierino_form_page)
 
+            # PAGINA index 6 - Pagina dei rilevamenti
+            self.rilevamenti = rilevamenti.Rilevamenti_page(self, self.header)
+            self.main_layout.addWidget(self.rilevamenti)
             
 
             # Connetti i segnali del form del sensore
@@ -107,11 +244,13 @@ class MainWindows(QMainWindow):
 
     def tastierino_pass(self):
         print("passato")
+        update_activity_shutdown()
         self.home_page.disattiva_passato()
         self.change_page(0)
 
     def tastierino_err(self):
         print("errore")
+        aggiungi_forzatura()   
         self.change_page(0)
     
     def set_background_color(self):
@@ -136,7 +275,6 @@ class MainWindows(QMainWindow):
         # Modifica l'header se necessario
         self.header.set_tipo(4)  # Supponendo che il tipo 1 modifichi l'header
         # Pulisci i campi del form
-        self.sensor_form_page.id_field.clear()
         self.sensor_form_page.tipo_field.setCurrentIndex(0)
         self.sensor_form_page.data_field.clear()
         self.sensor_form_page.stanza_field.clear()
@@ -150,19 +288,12 @@ class MainWindows(QMainWindow):
         # Modifica l'header se necessario
         self.header.set_tipo(5)  # Supponendo che il tipo 1 modifichi l'header
         # Carica i dati del sensore
-        future = db_api.get_sensor_by_pk(sensor_pk)
-        future.add_done_callback(lambda fut: self.handle_sensor_loaded(fut, sensor_pk))
-
-    def handle_sensor_loaded(self, future, sensor_pk):
-        self._log_thread_info("handle_loadedSensor_completata")
-        try:
-            risult = future.result()
-            self.signal_sensor_data_loaded.emit(risult, sensor_pk)
-            log.log_file(1000, f"Sensor loaded: {risult}")
-            # Chiama la funzione on_sensors_loaded con il risultato e sensor_pk
-        except Exception as e:
-            log.log_file(404, f"{e}")
-
+        risult = db_api.get_sensor_by_pk(sensor_pk)
+        
+        self.signal_sensor_data_loaded.emit(risult, sensor_pk)
+        log.log_file(1000, f"Sensor loaded: {risult}")
+        # Chiama la funzione on_sensors_loaded con il risultato e sensor_pk
+        
     def on_sensors_loaded(self, result, sensor_pk):
         # Carica i dati del sensore nella form di modifica
         self.sensor_form_page.load_sensor_data(result)
@@ -179,27 +310,31 @@ class MainWindows(QMainWindow):
         self.main_layout.setCurrentIndex(2)
 
     def save_sensor_data(self, sensor_data):
+        if sensor_data['Stanza'] != "":
+            stato = 1
+        else:
+            stato = 0
+        print(stato)
         future = db_api.edit_sensor(self.sensor_form_page.sensor_pk, (
-            sensor_data['Id'],
             sensor_data['Tipo'],
             sensor_data['Data'],
             sensor_data['Stanza'],
             sensor_data['Soglia'],
-            0  # Error field, set to 0 by default
+            stato  # Error field, set to 0 by default 
         )) if self.sensor_form_page.edit_mode else db_api.add_sensor((
-            sensor_data['Id'],
             sensor_data['Tipo'],
             sensor_data['Data'],
             sensor_data['Stanza'],
             sensor_data['Soglia'],
             0  # Error field, set to 0 by default
         ))
-        future.add_done_callback(lambda fut: self.handle_sensor_saved(fut))
+        self.handle_sensor_saved(future)
 
     def handle_sensor_saved(self, future):
         try:
-            result = future.result()
+            result = future
             success = bool(result)
+            
             self.signal_sensor_saved.emit(success)
         except Exception as e:
             log.log_file(404, f"{e}")
@@ -207,6 +342,7 @@ class MainWindows(QMainWindow):
 
     def handle_sensor_saved_ui_update(self, success):
         if success:
+            self.listener.update_sending.emit(self.sensor_form_page.sensor_pk, "mod") #modificato
             log.log_file(2007 if self.sensor_form_page.edit_mode else 2005, "Sensore modificato con successo." if self.sensor_form_page.edit_mode else "Nuovo sensore aggiunto con successo.")
         else:
             log.log_file(2001, "Errore nella modifica del sensore." if self.sensor_form_page.edit_mode else "Errore nell'aggiunta del nuovo sensore.")
@@ -216,6 +352,8 @@ class MainWindows(QMainWindow):
         self.senso_page.init_sensors()
         self.senso_page.refresh_ui()
             
+    def eliminalo(self, id):
+        self.listener.update_sending.emit(id, "del") #delete
     
     def _log_thread_info(self, function_name):
         """Log thread information for diagnostics."""
@@ -223,11 +361,42 @@ class MainWindows(QMainWindow):
         log.log_file(1000, f"DEBUG THREAD | {function_name} eseguito su thread: {current_thread.name} (ID: {current_thread.ident})")
         
         
+def start_sqlite_web(db_path, port=8080):
+    """
+    Avvia il server sqlite-web per visualizzare il database.
+    Assicurati di avere sqlite-web installato (pip install sqlite-web).
+    """
+    try:
+        # Avvia sqlite-web come sottoprocesso
+        subprocess.Popen(["sqlite_web", db_path, "--port", str(port)])
+        print(f"sqlite-web avviato su http://localhost:{port} per il DB: {db_path}")
+    except Exception as e:
+        print(f"Errore nell'avvio di sqlite-web: {e}")
 
 
 if __name__ == "__main__":
+    db.create_db()
+    # Avvia il server Flask in un thread separato
+    db_manager = init_db_manager(f.get_db())  # Sostituisci con il percorso corretto del database
+    db.create_db()
+    # Avvia il server Flask in un thread separato
+    flask_thread = threading.Thread(target=run_flask_app)
+    flask_thread.daemon = False  # Termina il thread quando l'app principale si chiude
+    flask_thread.start()
+    
+
+    time.sleep(10)
+   
+    
+    db_path = f.get_db()  
+    start_sqlite_web(db_path, port=8080)
+
     app = QApplication(sys.argv)
-    window = MainWindows()
+    window = MainWindows(flask_thread)
     window.show()
 
+    #app.aboutToQuit.connect(db_stop)
+
+
     sys.exit(app.exec())
+   

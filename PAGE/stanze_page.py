@@ -79,12 +79,12 @@ class Stanze_Page(QWidget):
 
         # Chiama in modo asincrono l'API per recuperare le stanze
         future = db_api.get_all_stanze()
-        future.add_done_callback(self.handle_stanze_loaded)
+        self.handle_stanze_loaded(future)
 
     def handle_stanze_loaded(self, future):
         self._log_thread_info("handle_loadedRoom_completata")
         try:
-            risult = future.result()
+            risult = future
             self.loaded_complet.emit(risult)
             log_file(1000, str(risult))
         except Exception as e:
@@ -137,12 +137,12 @@ class Stanze_Page(QWidget):
         self.clear_layout(self.h_layout_sensori)
         # Chiama in modo asincrono l'API per recuperare i sensori nella stanza
         future = db_api.get_sensori_by_stanza(stanza_nome)
-        future.add_done_callback(self.handle_sensori_loaded)
+        self.handle_sensori_loaded(future)
 
     def handle_sensori_loaded(self, future):
         self._log_thread_info("handle_loadedSensor_completata")
         try:
-            risult = future.result()
+            risult = future
             self.loaded_stanza.emit(risult)
             log_file(1000, str(risult))
         except Exception as e:
@@ -159,13 +159,12 @@ class Stanze_Page(QWidget):
             riga_layout = riga_superiore_layout if index % 2 == 0 else riga_inferiore_layout
             sensore = o.Sensore(
                 SensorePk=sensor_data[0],
-                Id=sensor_data[1],
-                Tipo=sensor_data[2],
-                Data=sensor_data[3],
-                Stanza=sensor_data[4],
-                Soglia=sensor_data[5],
-                Error=sensor_data[6],
-                Stato=sensor_data[7]
+                Tipo=sensor_data[1],
+                Data=sensor_data[2],
+                Stanza=sensor_data[3],
+                Soglia=sensor_data[4],
+                Error=sensor_data[5],
+                Stato=sensor_data[6]
             )
             sensore_widget = w.QWidgetSensore(sensore)
             sensore_widget.setObjectName("sensore")

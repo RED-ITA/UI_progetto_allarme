@@ -205,8 +205,35 @@ log_messages = {
     2408: ('ERROR', 'Errore salvataggio di accensione'),
     2409: ('ERROR', 'Errore salvataggio di spegnimento'),
     2410: ('ERROR', 'Errore richiesta sensori stanze'),
-    # WARNING
+    2411: ('ERROR', 'Errore nella modifica del sensore'),
+    2412: ('ERROR', 'Errore nell\'eliminazione del sensore'),
+    2413: ('ERROR', 'Errore nel recupero delle stanze dal database'),
+    2414: ('ERROR', 'Errore nel recupero dei sensori dal database'),
+    2415: ('ERROR', 'Errore nel recupero dei log dal database'),
+    2416: ('ERROR', 'Errore nel recupero del sensore per PK'),
+    2417: ('ERROR', 'Errore nel recupero dei sensori per stanza'),
+    2418: ('ERROR', 'Errore nel recupero delle activity dal database'),
+    2419: ('ERROR', 'Nessuna entry trovata per l\'aggiornamento dell\'attività'),
 
+     # Log operativi delle schede
+    2600: ('SUCCESS', "Inizio creazione schede, se non già presenti."),
+    2601: ('SUCCESS', "Scheda creata nella tabella IMPOSTAZIONI."),
+    2602: ('SUCCESS', "Scheda creata nella tabella PARAMETRI."),
+    2603: ('SUCCESS', "Scheda creata nella tabella VALUE."),
+    2604: ('INFO', "Scheda già presente nel database."),
+    2605: ('INFO', "DBWorkerThread terminato."),
+    2606: ('INFO', "Interruzione di DBWorkerThread..."),
+    2607: ('INFO', "DBWorkerThread interrotto."),
+    2608: ('INFO', "Log delle esecuzioni pulito."),
+    2609: ('INFO', "Log delle esecuzioni richiesto."),
+    2610: ('INFO', "tara: "),
+    2611: ('INFO', "calibrazione: "),
+    
+    2500: ('INFO', "Richiesta l'operazione: "),
+    2501: ('INFO', "Messa in coda"),
+    2502: ('INFO', "Gestita ora"),
+    # WARNING
+    2800: ("INFO", ""),
     # THREAD messages
     # INFO
     1000: ('INFO', 'thread: '),
