@@ -26,6 +26,7 @@ def create_db():
                             Error INTEGER,
                             Stato INTEGER  -- 1 = Active, 0 = Inactive
                         )''')
+            
 
             # Create the VALORI table
             c.execute('''CREATE TABLE IF NOT EXISTS VALORI (
@@ -76,6 +77,8 @@ def create_db():
             c.execute('''CREATE TABLE IF NOT EXISTS STANZE (
                             Nome TEXT PRIMARY KEY
                         )''')
+            
+            
             
 
 

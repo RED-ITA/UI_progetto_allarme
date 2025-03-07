@@ -79,12 +79,12 @@ class Stanze_Page(QWidget):
 
         # Chiama in modo asincrono l'API per recuperare le stanze
         future = db_api.get_all_stanze()
-        future.add_done_callback(self.handle_stanze_loaded)
+        self.handle_stanze_loaded(future)
 
     def handle_stanze_loaded(self, future):
         self._log_thread_info("handle_loadedRoom_completata")
         try:
-            risult = future.result()
+            risult = future
             self.loaded_complet.emit(risult)
             log_file(1000, str(risult))
         except Exception as e:
@@ -137,12 +137,12 @@ class Stanze_Page(QWidget):
         self.clear_layout(self.h_layout_sensori)
         # Chiama in modo asincrono l'API per recuperare i sensori nella stanza
         future = db_api.get_sensori_by_stanza(stanza_nome)
-        future.add_done_callback(self.handle_sensori_loaded)
+        self.handle_sensori_loaded(future)
 
     def handle_sensori_loaded(self, future):
         self._log_thread_info("handle_loadedSensor_completata")
         try:
-            risult = future.result()
+            risult = future
             self.loaded_stanza.emit(risult)
             log_file(1000, str(risult))
         except Exception as e:

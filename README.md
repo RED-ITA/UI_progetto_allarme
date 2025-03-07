@@ -90,5 +90,5 @@ L’applicazione gestisce diverse schede con ID e funzionamenti differenti, che 
 
 
 ```bash
-    C:\Users\psalv>curl -X POST http://192.168.1.41:5000/sensors -H "Content-Type: application/json" -d "{\"Tipo\": 1, \"Data\": \"2024-11-04\", \"Stanza\": \"Salone\", \"Soglia\": 25.5, \"Error\": 0}"
+    curl -X POST http://localhost:5001/sensor -H "Content-Type: application/json" -d '{"tipo": 1}'
 ```

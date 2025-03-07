@@ -16,7 +16,7 @@ from OBJ import OBJ_UI_Sensore as o
 from concurrent.futures import ThreadPoolExecutor
 
 @db_enqueue(priority=1)
-def add_sensor(sensor_data):
+def add_sensor(persistent_conn, sensor_data):
     """
     Aggiunge un nuovo sensore nella tabella SENSORI e crea una riga corrispondente
     nella tabella VALORI per il sensore appena aggiunto.
@@ -26,9 +26,8 @@ def add_sensor(sensor_data):
     :return: 1 se il sensore è stato aggiunto correttamente, altrimenti solleva un'eccezione.
     """
     log_file(2001)  # Log di inizio
-    conn = sqlite3.connect(f.get_db())
     try:
-        c = conn.cursor()
+        c = persistent_conn.cursor()
         # Inserisci il sensore nella tabella SENSORI
         c.execute('''INSERT INTO SENSORI (Tipo, Data, Stanza, Soglia, Error, Stato) 
                      VALUES (?, ?, ?, ?, ?, ?)''', sensor_data)
@@ -42,56 +41,68 @@ def add_sensor(sensor_data):
         c.execute('''UPDATE SISTEMA 
                      SET Aggiorna = 1 
                      WHERE Id = 1''')
-        conn.commit()
+        persistent_conn.commit()
         log_file(2101)  # Log di successo
         return sensor_id
-    finally:
-        conn.close()
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
 
 @db_enqueue(priority=1)
-def add_value(sensor_pk, value, allarme):
+def add_value(persistent_conn, sensor_pk, value, allarme):
     """
-    Inserisce un valore nella tabella VALORI per un sensore specifico e,
-    se il valore di allarme è 1, aggiorna la tabella SISTEMA impostando il campo Allarme a 1.
+    Aggiorna il valore nella tabella VALORI per un sensore specifico e,
+    se il valore di allarme è 1 e il sensore è attivo (Stato == 1), 
+    aggiorna la tabella SISTEMA impostando il campo Allarme a 1.
     
     :param sensor_pk: ID del sensore (SensorPk).
-    :param value: Valore da aggiungere.
+    :param value: Nuovo valore da aggiornare.
     :param allarme: Stato di allarme (0 o 1).
-    :return: 1 se il valore è stato aggiunto correttamente e la tabella SISTEMA aggiornata (se necessario).
+    :return: 1 se l'operazione è andata a buon fine.
     """
+    print("Add_Value")
     log_file(2002)  # Log di inizio
-    conn = sqlite3.connect(f.get_db())
     try:
-        c = conn.cursor()
-        # Inserisci il valore nella tabella VALORI
-        c.execute('''INSERT INTO VALORI (SensorPk, Value, Data, Allarme) 
-                     VALUES (?, ?, ?, ?)''', (sensor_pk, value, time.strftime("%Y-%m-%d %H:%M:%S"), allarme))
+        c = persistent_conn.cursor()
         
-        # Se l'allarme è 1, aggiorna la tabella SISTEMA
+        # Aggiorna il record esistente nella tabella VALORI per il sensore specificato
+        c.execute('''UPDATE VALORI 
+                     SET Value = ?, Data = ?, Allarme = ?
+                     WHERE SensorPk = ?''', 
+                  (value, time.strftime("%Y-%m-%d %H:%M:%S"), allarme, sensor_pk))
+        print("Update__valori")
+        # Se l'allarme è 1, aggiorna la tabella SISTEMA solo se il sensore è attivo
         if allarme == 1:
-            c.execute('''UPDATE SISTEMA 
-                         SET Allarme = 1 
-                         WHERE Id = 1''')
-        
-        conn.commit()
+            print("allarme = 1")
+            c.execute("SELECT Stato FROM SENSORI WHERE SensorPk = ?", (sensor_pk,))
+            ris = c.fetchone()  # Recupera il record del sensore
+            if ris is not None and ris[0] == 1:
+                print("STATO 1")
+                c.execute("SELECT Stato FROM SISTEMA WHERE Id = 1")
+                ris = c.fetchone()  # Recupera il record del sensore
+                if ris is not None and ris[0] == 1:
+                    c.execute('''UPDATE SISTEMA 
+                                 SET Allarme = 1 
+                                 WHERE Id = 1''')
+                    _add_log(persistent_conn=persistent_conn, sensor_pk=sensor_pk)
+        print("FINITO")
+        persistent_conn.commit()
         log_file(2102)  # Log di successo
         return 1
-    finally:
-        conn.close()
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
 @db_enqueue(priority=2)
-def get_sensor(sensor_pk=None):
+def get_sensor(persistent_conn, sensor_pk=None):
     """
     Recupera i dati di uno specifico sensore o di tutti i sensori dal database.
     
     :param sensor_pk: (Opzionale) ID del sensore da recuperare. Se None, recupera tutti i sensori.
     :return: Una lista di dict contenente i dati dei sensori.
     """
-    conn = sqlite3.connect(f.get_db())
-    conn.row_factory = sqlite3.Row  # Configura il cursore per restituire righe come dizionari
+    persistent_conn.row_factory = sqlite3.Row  # Configura il cursore per restituire righe come dizionari
     try:
-        c = conn.cursor()
+        c = persistent_conn.cursor()
         if sensor_pk:
             c.execute('''SELECT * FROM SENSORI WHERE SensorPk = ?''', (sensor_pk,))
         else:
@@ -99,48 +110,50 @@ def get_sensor(sensor_pk=None):
         
         sensors = [dict(row) for row in c.fetchall()]  # Converte ogni riga in un dizionario
         return sensors
-    finally:
-        conn.close()
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
+
+def _add_log(persistent_conn, sensor_pk):
+    """
+    aggiungi alla tabella log I valori di errrore
+    
+    :param sensor_pk: (Opzionale) ID del sensore da recuperare. Se None, recupera tutti i sensori.
+    :return: Una lista di dict contenente i dati dei sensori.
+
+    """
+
+    log_file(2001)  # Log di inizio
+    try:
+        c = persistent_conn.cursor()
+          # Crea una riga corrispondente nella tabella VALORI
+        c.execute('''INSERT INTO LOG (SensorId, Data) 
+                     VALUES (?, ?, ?, ?)''', (sensor_pk, time.strftime("%Y-%m-%d %H:%M:%S")))
+        
+        persistent_conn.commit()
+        log_file(2102)  # Log di successo
+        return 1
+    except sqlite3.Error as e:
+        print(f"error : {e}")
 
 @db_enqueue(priority=1)
-def controllo_valori():
+def controllo_valori(persistent_conn):
     """
     Checks sensor values against their thresholds and updates the system alarm if necessary.
     Logs any threshold breaches into the LOG table.
     """
-    conn = sqlite3.connect(f.get_db())
-    conn.row_factory = sqlite3.Row  # Configure the cursor to return rows as dictionaries
+    persistent_conn.row_factory = sqlite3.Row  # Configure the cursor to return rows as dictionaries
     try:
-        c = conn.cursor()
+        c = persistent_conn.cursor()
 
         # Get all active sensors
-        c.execute("SELECT SensorPk, Soglia FROM SENSORI WHERE Stato = 1")
-        sensors = c.fetchall()
-
-        alarm_triggered = False
-
-        for sensor in sensors:
-            SensorPk = sensor['SensorPk']
-            Soglia = sensor['Soglia']
-
-            # Get the latest value for this sensor
-            c.execute("SELECT Value, Data FROM VALORI WHERE SensorPk = ? ORDER BY Data DESC LIMIT 1", (SensorPk,))
-            value_row = c.fetchone()
-            if value_row:
-                Value = value_row['Value']
-                Data = value_row['Data']
-
-                if Value > Soglia:
-                    # Set SISTEMA.Allarme to 1
-                    c.execute("UPDATE SISTEMA SET Allarme = 1 WHERE Id = 1")
-                    alarm_triggered = True
-
-                    # Insert into LOG
-                    c.execute("INSERT INTO LOG (SensorId, Data) VALUES (?, ?)", (SensorPk, Data))
-                    print("allarme")
-
-        if alarm_triggered:
-            conn.commit()
-    finally:
-        conn.close()
+        c.execute("SELECT Allarme FROM SISTEMA WHERE Id = 1")
+        ris = c.fetchone()  # Recupera il record del sensore
+        if ris is not None and ris[0] == 1:
+            return 1
+        else:
+            return 0
+        # TODO
+    except sqlite3.Error as e:
+        print(f"error : {e}")
+        return 0
