@@ -36,72 +36,55 @@ import subprocess
 import websocket  # pip install websocket-client
 
 class WebSocketListener(QThread):
-    # Questo segnale viene emesso quando si riceve un messaggio "process_to_ui_update"
-    update_received = pyqtSignal(str)
-    update_sending = pyqtSignal(int, str)  # segnale B
+    # Segnale emesso al ricevere una notifica
+    notification_signal = pyqtSignal(str)
     
-    def __init__(self, parent=None):
+    def __init__(self, url, parent=None):
         super(WebSocketListener, self).__init__(parent)
-        self.ws_url = "ws://127.0.0.1:5001"
+        self.url = url
         self.ws = None
         self.running = True
-
+        
     def run(self):
-        # Callback per i messaggi in arrivo dalla connessione WebSocket
-        def on_message(ws, message):
-            # Il thread controlla e risponde solo a "process_to_ui_update"
-            if "process_to_ui_update" in message:
-                self.process_to_ui_update_signal.emit(message)
-
-        def on_error(ws, error):
-            print("Errore WebSocket:", error)
-
-        def on_close(ws, close_status_code, close_msg):
-            print("Connessione WebSocket chiusa")
-
-        def on_open(ws):
-            print("Connessione WebSocket aperta")
-
-        # Creazione dell'istanza WebSocketApp
-        self.ws = websocket.WebSocketApp(
-            self.ws_url,
-            on_message=on_message,
-            on_error=on_error,
-            on_close=on_close
-        )
-        self.ws.on_open = on_open
-
-        # Esecuzione della WebSocket in un thread separato per non bloccare il QThread
-        ws_thread = threading.Thread(target=self.ws.run_forever)
-        ws_thread.daemon = True
-        ws_thread.start()
-
-        # Mantieni il thread attivo finché running è True
+        # Abilita il trace per maggiori informazioni (opzionale)
+        websocket.enableTrace(True)
+        # Inizializza la connessione includendo l'header Origin
+        
+        
+        # run_forever è bloccante: il thread rimane in ascolto fino a quando self.running è True
         while self.running:
-            time.sleep(0.1)
-
-        if self.ws:
-            self.ws.close()
-
-    def send_ui_to_process_update(self, message):
-        """
-        Metodo per inviare un messaggio "ui_to_process_update" al server.
-        Il QThread non ascolta questi messaggi, ma li invia.
-        """
-        if self.ws and self.ws.sock and self.ws.sock.connected:
             try:
-                self.ws.send(message)
-                print("Messaggio inviato:", message)
-            except Exception as e:
-                print("Errore nell'invio del messaggio:", e)
-        else:
-            print("WebSocket non connesso. Impossibile inviare il messaggio.")
+                self.ws = websocket.WebSocketApp(self.url,
+                                         on_message=self.on_message,
+                                         on_error=self.on_error,
+                                         on_close=self.on_close)
+                self.ws.on_open = self.on_open
 
+                self.ws.run_forever()
+            except Exception as e:
+                print("Errore nella connessione WebSocket:", e)
+
+            #time.sleep(2)
+    
+    def on_message(self, ws, message):
+        print("Messaggio ricevuto:", message)
+        # Emissione del segnale con il messaggio ricevuto
+        self.notification_signal.emit(message)
+    
+    def on_error(self, ws, error):
+        print("Errore:", error)
+    
+    def on_close(self, ws, close_status_code, close_msg):
+        print("Connessione WebSocket chiusa:", close_status_code, close_msg)
+    
+    def on_open(self, ws):
+        print("Connessione aperta al WebSocket.")
+    
     def stop(self):
         self.running = False
-        self.wait()
-
-
+        if self.ws:
+            self.ws.close()
+            
 class MainWindows(QMainWindow):
     signal_sensor_data_loaded = pyqtSignal(o.Sensore, int)  # Passa i dati del sensore e la sensor_pk
     signal_sensor_saved = pyqtSignal(bool)  # Segnale per indicare il completamento del salvataggio del sensore
@@ -113,20 +96,8 @@ class MainWindows(QMainWindow):
 
         log.setup_logger()
         # db_manager = init_db_manager(f.get_db)  # Sostituisci con il percorso corretto del database
+        self.start_websocket_listener()
 
-        self.listener = WebSocketListener()
-
-        # Collega il segnale update_received al metodo handle_update
-        
-        try:
-            self.listener.update_received.connect(self.handle_update)
-
-            self.listener.start()
-
-            self.listener.update_sending.emit(1, "del") #delete 
-            self.listener.update_sending.emit(1, "mod") #modificato
-        except Exception as e:
-            print(e)
 
         self.setWindowTitle("ALLARME APP")
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -143,9 +114,17 @@ class MainWindows(QMainWindow):
 
 
          # Avvia un QTimer che verifica periodicamente se il thread Flask è vivo
-        self.thread_check_timer = QTimer(self)
-        self.thread_check_timer.timeout.connect(self.check_flask_thread_alive)
-        self.thread_check_timer.start(2000)  # ogni 2 secondi
+        #self.thread_check_timer = QTimer(self)
+        #self.thread_check_timer.timeout.connect(self.check_flask_thread_alive)
+        #self.thread_check_timer.start(2000)  # ogni 2 secondi
+
+
+    def start_websocket_listener(self): 
+        # URL del WebSocket (modifica se necessario)
+        ws_url = "ws://127.0.0.1:5001/process_to_ui_update"
+        self.listener = WebSocketListener(ws_url)
+        self.listener.notification_signal.connect(self.handle_update)
+        self.listener.start()
 
     def check_flask_thread_alive(self):
         """Verifica se il thread Flask è ancora vivo."""
@@ -178,6 +157,8 @@ class MainWindows(QMainWindow):
         # db_stop()
         log.log_file(2701, "Chiusura dell'applicazione gestita correttamente")
         # Continua con l'evento di chiusura standard
+        self.listener.stop()
+        self.listener.wait()
         event.accept()
         
     def create_layout(self):
@@ -372,6 +353,9 @@ def start_sqlite_web(db_path, port=8080):
         print(f"sqlite-web avviato su http://localhost:{port} per il DB: {db_path}")
     except Exception as e:
         print(f"Errore nell'avvio di sqlite-web: {e}")
+
+
+
 
 
 if __name__ == "__main__":

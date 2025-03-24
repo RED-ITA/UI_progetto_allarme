@@ -52,6 +52,11 @@ def create_db():
             if count == 0:
                 c.execute('''INSERT INTO SISTEMA (Id, Allarme, Stato, Aggiorna, Error) 
                              VALUES (?, ?, ?, ?, ?)''', (1, 0, 0, 0, 0))
+            else:
+                c.execute('''UPDATE SISTEMA 
+                             SET Allarme = '0', Stato = '0', Aggiorna = '0'
+                             WHERE Id = '1'
+                          ''')
 
             # Create the LOG table with an auto-incrementing primary key
             c.execute('''CREATE TABLE IF NOT EXISTS LOG (

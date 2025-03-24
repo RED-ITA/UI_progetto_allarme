@@ -1,67 +1,93 @@
-
-
+"""
+server.py
+---------
+Esempio di server Flask + gevent WSGI + WebSocket con 
+due endpoint separati (IoT e UI).
+"""
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-
 from flask import Flask, request, jsonify
 from flask_sockets import Sockets
 
 from datetime import datetime
-# Qui importi i tuoi metodi di accesso al DB, ad es.:
+import sqlite3
 
+# Import da moduli interni
 from API.DB.API_bg import (
     add_sensor, 
     add_value, 
     get_sensor
 )
-import sqlite3
 import API.funzioni as f
-
-
-
 import engineio
 import socketio
 
 
-
+# ============================================================================
+#  Inizializzazione dell'app Flask e Sockets
+# ============================================================================
 app = Flask(__name__)
 sockets = Sockets(app)
 
-# Opzionale: una struttura per conservare eventuali WebSocket connessi (se vuoi broadcast o simili)
-connected_ws = []
-#
+# Liste per tracciare i WebSocket connessi: uno per i dispositivi IoT, uno per le UI
+connected_ws_iot = []
+connected_ws_ui = []
 
+
+# ============================================================================
+#  FUNZIONI DI SUPPORTO
+# ============================================================================
+def row_to_dict(row):
+    """Converte un oggetto sqlite3.Row in un dizionario Python."""
+    return dict(zip(row.keys(), row))
 
 
 def notify_ui_update(tipo):
     """
-    Se vuoi inviare un messaggio di notifica a tutti i client WebSocket connessi
-    puoi usare questo metodo (è facoltativo, puoi anche non usarlo).
+    Invia un messaggio di notifica a tutti i client WebSocket UI connessi.
     """
-    print("Notifica di aggiornamento ai WebSocket (tipo):", tipo)
-    for ws in connected_ws:
+    print("Notifica di aggiornamento alle UI (tipo):", tipo)
+    for ws in connected_ws_ui:
         if not ws.closed:
+            print("Sended (UI)")
             ws.send(f"process_to_ui_update: {tipo}")
+        else:
+            print("Not sended (UI)")
 
 
-# @socketio.on('ui_to_process_update')
-def handle_ui_update(data):
-    print("Aggiornamento ricevuto dall'UI:", data)
-    # Trasmetti l'aggiornamento ad altri client
-    for ws in connected_ws:
+def notify_iot_update(tipo):
+    """
+    Invia un messaggio di notifica a tutti i client WebSocket IoT connessi.
+    (se serve anche notificare i dispositivi IoT)
+    """
+    print("Notifica di aggiornamento agli IoT (tipo):", tipo)
+    for ws in connected_ws_iot:
         if not ws.closed:
-            ws.send(f"ui_to_process_update: {data}")
+            print("Sended (IoT)")
+            ws.send(f"ui_to_process_update: {tipo}")
+        else:
+            print("Not sended (IoT)")
 
 
-# Helper function to convert sqlite3.Row objects to dictionaries
-def row_to_dict(row):
-    return dict(zip(row.keys(), row))
+def handle_ui_update(data):
+    """
+    Placeholder: gestisce i messaggi ricevuti dalle UI (opzionale).
+    """
+    print("Aggiornamento ricevuto dall'UI:", data)
+    # Se vuoi ritrasmettere ai dispositivi IoT, puoi usare notify_iot_update(data)
+    # notify_iot_update(data)
 
 
-    
+# ============================================================================
+#  ENDPOINTS REST
+# ============================================================================
 @app.route('/sensor', methods=['POST'])
 def create_sensor():
+    """
+    Crea un nuovo sensore.
+    Payload JSON: {"tipo": <string>}
+    """
     print("create_sensore", flush=True)
     data = request.json
     if not data or 'tipo' not in data:
@@ -75,7 +101,7 @@ def create_sensor():
             "Senza stanza", 50, 0, 0
         )
         print("Chiamata a add_sensor con:", sensor_data, flush=True)
-        sensor_id = add_sensor(sensor_data)  # Potrebbe bloccare
+        sensor_id = add_sensor(sensor_data)
         print("add_sensor completato, sensor_id =", sensor_id, flush=True)
         
         print("Chiamata a notify_ui_update", flush=True)
@@ -101,7 +127,6 @@ def get_sensor_data(sensor_pk):
         if not sensor:
             return jsonify({"error": "Sensore non trovato"}), 404
 
-        # Se la funzione get_sensor() restituisce una lista di dict, puoi tornarla come "sensor"
         return jsonify({"sensor": sensor}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -110,8 +135,8 @@ def get_sensor_data(sensor_pk):
 @app.route('/sensor/value', methods=['POST'])
 def insert_value():
     """
-    Inserisce un valore per un sensore specifico.
-    Richiede JSON: {"sensor_pk": <int>, "value": <int>, "allarme": <int>}
+    Inserisce un valore per un sensore esistente.
+    Payload JSON: {"sensor_pk": <int>, "value": <int>, "allarme": <int>}
     """
     data = request.json
     if not data or not all(k in data for k in ("sensor_pk", "value", "allarme")):
@@ -119,68 +144,88 @@ def insert_value():
 
     try:
         add_value(data['sensor_pk'], data['value'], data['allarme'])
-        # Notifica l'UI
+        print("notify UI -->")
         notify_ui_update("value_added")
         return jsonify({"success": True}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-
-
-
-
-
-
-#
-# ======================
-#   ENDPOINT WEBSOCKET
-# ======================
-#
-
+# ============================================================================
+#  ENDPOINT WEBSOCKET (IoT) -> /ui_to_process_update
+# ============================================================================
 @sockets.route('/ui_to_process_update')
-def ws_ui_to_process_update(ws):
+def ws_iot_endpoint(ws):
     """
-    Gestisce il WebSocket standard all'endpoint /ui_to_process_update.
-    L'ESP32 può connettersi a ws://<IP>:5001/ui_to_process_update
-    e inviare/ricevere messaggi in formato testuale.
+    Gestisce il WebSocket a cui si connettono i dispositivi IoT.
+    (nome endpoint e logica a tuo piacere)
     """
-    print("Client WebSocket connesso su /ui_to_process_update")
-
-    # Aggiungiamo il ws alla lista globale, se vogliamo gestire broadcast o simili
-    connected_ws.append(ws)
+    print("Client IoT WebSocket connesso su /ui_to_process_update")
+    connected_ws_iot.append(ws)
 
     try:
         while not ws.closed:
-            message = ws.receive()  # Riceve un messaggio testuale dal client
+            message = ws.receive()
             if message is None:
-                # Se None, significa che il client ha chiuso la connessione
+                # Se None, il client ha chiuso la connessione
                 break
 
-            print(f"Messaggio WebSocket ricevuto: {message}")
+            print(f"[IoT] Messaggio WebSocket ricevuto: {message}")
+            # Qui, se vuoi inoltrare all'UI, chiama handle_ui_update(message) oppure notify_ui_update(...)
+            # handle_ui_update(message)  # Esempio
 
-            # Esempio di risposta immediata
-            ws.send("Messaggio ricevuto dal server!")
+            # Risposta immediata
+            ws.send("Messaggio ricevuto dal server (IoT).")
     finally:
-        # Rimuovi dalla lista dei connessi se si disconnette
-        if ws in connected_ws:
-            connected_ws.remove(ws)
-
-    print("Client WebSocket disconnesso.")
+        if ws in connected_ws_iot:
+            connected_ws_iot.remove(ws)
+    print("Client IoT WebSocket disconnesso.")
 
 
-#
-# ======================
-#   MAIN / AVVIO SERVER
-# ======================
-#
+# ============================================================================
+#  ENDPOINT WEBSOCKET (UI) -> /process_to_ui_update
+# ============================================================================
+@sockets.route('/process_to_ui_update')
+def ws_ui_endpoint(ws):
+    """
+    Gestisce il WebSocket a cui si connettono le UI.
+    (nome endpoint e logica a tuo piacere)
+    """
+    print("Client UI WebSocket connesso su /process_to_ui_update")
+    connected_ws_ui.append(ws)
 
+    try:
+        while not ws.closed:
+            message = ws.receive()
+            if message is None:
+                break
+
+            print(f"[UI] Messaggio WebSocket ricevuto: {message}")
+
+            # Se vuoi riconoscere un messaggio "ui_to_process_update" proveniente dall'UI:
+            if "ui_to_process_update" in message:
+                handle_ui_update(message)
+
+            # Risposta immediata
+            ws.send("Messaggio ricevuto dal server (UI).")
+    finally:
+        if ws in connected_ws_ui:
+            connected_ws_ui.remove(ws)
+    print("Client UI WebSocket disconnesso.")
+
+
+# ============================================================================
+#  MAIN / AVVIO DEL SERVER
+# ============================================================================
 def run_flask_app():
-    # Avvio di un server gevent WSGI che supporta WebSocket
+    """
+    Avvia un server gevent WSGI in ascolto su 0.0.0.0:5001
+    che supporta WebSocket tramite WebSocketHandler.
+    """
     server = pywsgi.WSGIServer(
-        ('0.0.0.0', 5001),  # indirizzo e porta
-        app,                # la tua app Flask
-        handler_class=WebSocketHandler  # gestore per WebSocket
+        ('0.0.0.0', 5001),  # IP e porta d'ascolto
+        app,
+        handler_class=WebSocketHandler
     )
-    server.serve_forever()
     print("Server in ascolto su 0.0.0.0:5001...")
+    server.serve_forever()
