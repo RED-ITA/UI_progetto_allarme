@@ -1,0 +1,23 @@
+QPushButtonBadge#bt {
+    background-color: #e0e0e0;
+    border: 1px solid #b0b0b0;
+    border-radius: 5px;
+    font-size: 18px;
+}
+
+QPushButtonBadge#bt:hover {
+    background-color: #424242;
+}
+
+QPushButtonBadge#bt:pressed {
+    background-color: #000000;
+}
+
+QLabel {
+    color: #333333;
+    font-weight: bold;
+}
+
+QDialog {
+    background-color: #f1f1f1;
+}

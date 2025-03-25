@@ -1,0 +1,135 @@
+/* Stylesheet per SensorFormPage */
+
+QLabel {
+    font-size: 24px;
+    color: #000000;
+}
+
+#idField {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+#tipoField {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+QLabel#dataField {
+    border-radius: 4px;
+    font-size: 14px;
+    color: #000000;
+}
+
+#stanzaField {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+#addStanzaButton {
+    padding: 6px 12px;
+    font-size: 14px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+}
+
+#addStanzaButton:hover {
+    background-color: #0056b3;
+}
+
+#sogliaField {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+#saveButton {
+    padding: 8px 16px;
+    font-size: 16px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+#saveButton:hover {
+    background-color: #218838;
+}
+
+#cancelButton {
+    padding: 8px 16px;
+    font-size: 16px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+#cancelButton:hover {
+    background-color: #c82333;
+}
+
+/* Stile per lo slider della soglia (sogliaSlider) */
+#sogliaSlider {
+    min-height: 60px;
+    max-height: 60px;
+}
+
+#sogliaSlider::groove:horizontal {
+    
+    background-color: #444444;
+    height: 8px;
+    border-radius: 4px;
+}
+
+#sogliaSlider::handle:horizontal {
+    background: #4285f4; /* Colore blu per il manico */
+    border: 1px solid #4285f4;
+    width: 40px;
+    height: 40px;
+    margin: -5px 0; /* Allineamento verticale */
+    border-radius: 9px;
+}
+
+#sogliaSlider::sub-page:horizontal {
+    background: #72a5fe; /* Colore più chiaro della pagina attraversata */
+    height: 30px;
+    border-radius: 4px;
+}
+
+#sogliaSlider::add-page:horizontal {
+    background-color: #444444;
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Stile per l'etichetta del valore della soglia (sogliaValueLabel) */
+#sogliaValueLabel {
+    font-size: 24px;
+    color: #333;
+    padding-left: 10px;
+} 
+
+/* Aggiungi un po' di margine tra lo slider e l'etichetta */
+QHBoxLayout > #sogliaValueLabel {
+    margin-left: 10px;
+}
