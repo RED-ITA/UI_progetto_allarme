@@ -13,5 +13,5 @@ setup(
     version="0.0.0",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
-    install_requires=load_requirements("requirement.txt"),
+    install_requires=load_requirements("requirements.txt"),
 )
