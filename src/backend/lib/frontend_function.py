@@ -17,7 +17,7 @@ from OBJ import OBJ_UI_Sensore as o
 from concurrent.futures import ThreadPoolExecutor
 
 @db_enqueue(priority=1)
-def add_sensor(persistent_conn, sensor_data):
+def ui_add_sensor(persistent_conn, sensor_data):
     log_file(2001)
     try:
         c = persistent_conn.cursor()

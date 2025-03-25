@@ -13,13 +13,30 @@ from flask_sockets import Sockets
 from datetime import datetime
 import sqlite3
 
-# Import da moduli interni
-from API.DB.API_bg import (
+# Import da moduli interni backend
+from src.backend.lib.backend_funciton import (
     add_sensor, 
     add_value, 
     get_sensor
 )
-import API.funzioni as f
+
+# Import da moduli interni frontend
+from src.backend.lib.frontend_function import (
+    ui_add_sensor,
+    edit_sensor,
+    delete_sensor,
+    get_all_stanze,
+    get_all_sensori,
+    get_all_activities, 
+    get_all_logs, 
+    get_sensor_by_pk, 
+    get_sensori_by_stanza, 
+    add_stanza,
+    aggiungi_forzatura,
+    insert_activity,
+    update_activity_shutdown
+)
+
 import engineio
 import socketio
 
