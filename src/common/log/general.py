@@ -5,6 +5,8 @@ import os
 from src.common.log.app import frontend_errors
 from src.common.log.backend import backend_errors
 
+from src.common.funzioni.generale import get_log_directory
+
 # Define a new logging level for SUCCESS
 SUCCESS_LEVEL_NUM = 25
 logging.addLevelName(SUCCESS_LEVEL_NUM, "SUCCESS")
@@ -36,7 +38,7 @@ def setup_logger():
     logger.setLevel(logging.DEBUG)  # Set the minimum logger level
 
     # Specify the directory for log files
-    log_directory = f.get_resource_path(os.path.join("data", "logs"))
+    log_directory = get_log_directory()
     # Ensure the directory exists
     os.makedirs(log_directory, exist_ok=True)
 
