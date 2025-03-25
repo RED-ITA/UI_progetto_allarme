@@ -4,7 +4,9 @@ import time
 from queue import PriorityQueue, Empty
 from functools import wraps
 from concurrent.futures import Future, ThreadPoolExecutor
-from API.LOG import log_file
+
+
+from src.common.log.general import log_file
 
 
 # Mantiene il riferimento al gestore

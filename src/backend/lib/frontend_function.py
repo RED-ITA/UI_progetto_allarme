@@ -1,20 +1,10 @@
 import sqlite3
-import time
-from API import funzioni as f
-from API.LOG import log_file 
-from PyQt6.QtCore import QThreadPool, QObject, pyqtSignal
-from concurrent.futures import ThreadPoolExecutor, Future
-from functools import wraps
-import threading
-from queue import Queue
-import functools
-import concurrent.futures
-import time
 from datetime import datetime
-from API.DB.queue_manager import db_enqueue
-from OBJ import OBJ_UI_Sensore as o
 
-from concurrent.futures import ThreadPoolExecutor
+from src.common.log.general import log_file
+
+from src.backend.lib.queue_manager import db_enqueue
+from src.backend.lib.obj.sensore import Sensore
 
 @db_enqueue(priority=1)
 def ui_add_sensor(persistent_conn, sensor_data):
@@ -125,7 +115,7 @@ def get_sensor_by_pk(persistent_conn, sensor_pk):
         data = c.fetchone()
         if data:
             log_file(2100)
-            sensor = o.Sensore(
+            sensor = Sensore(
                 SensorePk=data[0],
                 Tipo=data[1],
                 Data=data[2],
